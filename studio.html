@@ -1400,28 +1400,41 @@ function svShowMode(mode) {
 async function svGenerateSetlist() {
   const btn = document.getElementById('sv-ai-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ AI 排歌中...';
+  btn.textContent = '⏳ 排歌中...';
 
   const dateStr = svTodayKey();
-  const storageKey = 'tangping_votes_' + dateStr;
   let votes = {};
-  try { votes = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+
+  // Load votes: GAS first, fallback to localStorage
+  try {
+    if (SV_SCRIPT_URL) {
+      const res = await fetch(SV_SCRIPT_URL + '?date=' + dateStr);
+      const json = await res.json();
+      if (json.tally && Object.keys(json.tally).length) votes = json.tally;
+    }
+  } catch(e) {}
+  if (!Object.keys(votes).length) {
+    try { votes = JSON.parse(localStorage.getItem('tangping_votes_' + dateStr) || '{}'); } catch(e) {}
+  }
 
   const info = TP_DATA.schedule[dateStr] || svTodayData;
   if (!info) {
     document.getElementById('sv-setlist-container').innerHTML = '<div class="card" style="color:var(--muted);text-align:center;padding:20px;">请先加载今天的演出日期</div>';
-    btn.disabled = false;
-    btn.textContent = '✨ AI 排歌（根据投票）';
-    return;
+    btn.disabled = false; btn.textContent = '✨ AI 排歌（根据投票）'; return;
   }
 
-  const singerNames = info.singers.join(', ');
-  const voteList = Object.entries(votes).sort((a,b)=>b[1]-a[1])
-    .map(([k,v]) => { const [t,s]=k.split('|||'); return `${t} (${s||''}) - ${v}票`; }).join('\n') || '暂无投票数据（将按默认歌单编排）';
+  document.getElementById('sv-setlist-container').innerHTML = `<div class="card"><div class="loading-state"><div class="spinner"></div><div>正在根据投票结果编排今晚歌单...</div></div></div>`;
 
-  const fullSongList = info.songs.map(s => `${s.t} - ${s.s.join('/')} [${s.set}]`).join('\n');
+  try {
+    if (window.cowork?.askClaude) {
+      // ── Claude AI path ──
+      btn.textContent = '⏳ AI 排歌中...';
+      const singerNames = info.singers.join(', ');
+      const voteList = Object.entries(votes).sort((a,b)=>b[1]-a[1])
+        .map(([k,v]) => { const [t,s]=k.split('|||'); return `${t}(${s||''}) - ${v}票`; }).join('\n') || '暂无投票数据（将按默认歌单编排）';
+      const fullSongList = info.songs.map(s => `${s.t} - ${s.s.join('/')} [${s.set}]`).join('\n');
 
-  const prompt = `你是躺平 Tăng Píng KL（Subang KL，马来西亚）的音乐总监助理。
+      const prompt = `你是躺平 Tăng Píng KL（Subang KL，马来西亚）的音乐总监助理。
 今晚日期：${dateStr}
 今晚歌手：${singerNames}
 
@@ -1444,41 +1457,90 @@ ${voteList}
 - 每个 Set 的末尾用一首快歌收尾，炒热气氛迎接下一 Set
 
 【整场 4 个 Set 的宏观节奏】
-- Set 1（6首）：暖场。大歌不要太重，口水歌为主，最后一首快歌让现场热起来
-- Set 2（6首）：情绪建立。大歌开始有重量，情歌/抒情为主，结尾快歌推进能量
-- Set 3（6首）：高潮。最重的大歌放这里，高票歌曲优先进入，结尾快歌最燃
-- Set 4（6首）：收尾。大歌压轴（倒数第二首），最后一首选最有记忆度的名曲作完美收场
+- Set 1（6首）：暖场，大歌不要太重，口水歌为主，最后一首快歌让现场热起来
+- Set 2（6首）：情绪建立，大歌开始有重量，情歌/抒情为主，结尾快歌推进能量
+- Set 3（6首）：高潮，最重的大歌放这里，高票歌曲优先进入，结尾快歌最燃
+- Set 4（6首）：收尾，大歌压轴（倒数第二首），最后一首选最有记忆度的名曲完美收场
 
 【其他规则】
 - 同一歌手不连续超过 2 首
 - 高票歌曲优先安排在 Set 2-3 的黄金位置
-- 如果暂无投票数据，按歌单顺序编排
 
 请只输出JSON，格式如下（不要加任何说明文字）：
 [{"set":"Set 1","order":1,"title":"歌名","singer":"歌手","key":"调","votes":0,"note":"编排理由一句话"},...]
 
 输出必须是完整的JSON数组，包含所有应演出的歌曲（约24首）。`;
 
-  document.getElementById('sv-setlist-container').innerHTML = `<div class="card"><div class="loading-state"><div class="spinner"></div><div>AI 正在根据投票结果编排今晚歌单...</div></div></div>`;
+      const result = await window.cowork.askClaude(prompt, []);
+      let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
+      let setlist = null;
+      try { setlist = JSON.parse(raw.trim()); } catch(e) {}
+      if (!setlist) { const m = raw.match(/\[([\s\S]+?)\]/); if (m) try { setlist = JSON.parse('['+m[1]+']'); } catch(e2) {} }
+      if (!setlist) { const s=raw.indexOf('['), e=raw.lastIndexOf(']'); if(s>-1&&e>s) try{setlist=JSON.parse(raw.slice(s,e+1));}catch(e2){} }
+      if (!setlist || !setlist.length) throw new Error('无法解析 AI 返回');
+      svRenderSetlist(setlist);
 
-  try {
-    const result = await window.cowork.askClaude(prompt, []);
-    let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
-    
-    // Extract JSON
-    let setlist = null;
-    try { setlist = JSON.parse(raw.trim()); } catch(e) {}
-    if (!setlist) { const m = raw.match(/\[([\s\S]+?)\]/); if (m) try { setlist = JSON.parse('['+m[1]+']'); } catch(e2) {} }
-    if (!setlist) { const s=raw.indexOf('['), e=raw.lastIndexOf(']'); if(s>-1&&e>s) try{setlist=JSON.parse(raw.slice(s,e+1));}catch(e2){} }
-
-    if (!setlist || !setlist.length) throw new Error('无法解析 AI 返回');
-    svRenderSetlist(setlist);
+    } else {
+      // ── Local rule-based fallback ──
+      const setlist = svArrangeSetlistLocally(info, votes);
+      svRenderSetlist(setlist);
+    }
   } catch(e) {
     document.getElementById('sv-setlist-container').innerHTML = `<div class="card"><div class="empty-state"><div class="empty-icon">⚠️</div><div>排歌失败，请重试</div><div style="font-size:12px;margin-top:6px;">${escHtml(e.message)}</div></div></div>`;
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ AI 排歌（根据投票）';
   }
+}
+
+// ─── Local rule-based setlist arrangement ───
+function svArrangeSetlistLocally(info, votes) {
+  const FAST_RE = /\(rock\)|rock version|uptown funk|bang bang|dance monkey|long juan feng|shuai dao|beggin|chao kuai|i will survive|born this way|r&b all night/i;
+  const BIG_RE  = /lei hai|shan hai|tian kong mei you|yi lu xiang bei|wang fei|si le dou yao|yi nian|tian ya ke|ni bu shi zhen zheng|dao di fa shen|zhong sheng mei li|tian tian xiang shang/i;
+
+  const songs = (info.songs || []).map(s => {
+    const singer = s.s.join('/');
+    // Match votes — keys may be Chinese display titles, try fuzzy match
+    let voteCount = 0;
+    for (const [k, v] of Object.entries(votes)) {
+      const [kt] = k.split('|||');
+      if (kt === s.t || kt.toLowerCase() === s.t.toLowerCase()) { voteCount = v; break; }
+    }
+    const isFast = FAST_RE.test(s.t);
+    const isBig  = BIG_RE.test(s.t);
+    const type   = isFast ? 'fast' : isBig ? 'big' : 'popular';
+    const typeLabel = type === 'big' ? '大歌' : type === 'fast' ? '快歌' : '口水歌';
+    return {
+      set: s.set, title: s.t, singer, key: s.k || '', votes: voteCount, type,
+      note: voteCount > 0 ? `${voteCount}票 · ${typeLabel}` : typeLabel
+    };
+  });
+
+  const typeRank = { big: 0, popular: 1, fast: 2 };
+  const result = [];
+  ['Set 1','Set 2','Set 3','Set 4'].forEach(setName => {
+    let setSongs = songs.filter(s => s.set === setName);
+    setSongs.sort((a, b) => {
+      const diff = typeRank[a.type] - typeRank[b.type];
+      return diff !== 0 ? diff : b.votes - a.votes;
+    });
+    setSongs = svBalanceSingers(setSongs);
+    setSongs.forEach((song, i) => result.push({ ...song, order: i + 1 }));
+  });
+  return result;
+}
+
+function svBalanceSingers(songs) {
+  if (songs.length <= 2) return songs;
+  const result = [], remaining = [...songs];
+  while (remaining.length) {
+    const last2 = result.slice(-2);
+    const blocked = (last2.length === 2 && last2[0].singer === last2[1].singer) ? last2[0].singer : null;
+    let idx = blocked ? remaining.findIndex(s => s.singer !== blocked) : 0;
+    if (idx === -1) idx = 0;
+    result.push(remaining.splice(idx, 1)[0]);
+  }
+  return result;
 }
 
 // ─── Render & edit setlist ───
