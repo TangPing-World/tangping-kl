@@ -632,7 +632,7 @@
         <div class="trend-title">📋 已保存排班</div>
         <button class="btn-refresh" onclick="schLoadList()">↻ 刷新</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">以下日期已保存到 Google Sheet，投票页会自动读取。已内置在程序中的历史日期无需重复添加。</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">🔵 内建日期（程序自带，无需重复添加）&nbsp;&nbsp;☁️ 后台新增日期（保存到 Google Sheet）</div>
       <div id="sch-list">
         <div style="color:var(--muted);text-align:center;padding:20px;font-size:13px;">加载中...</div>
       </div>
@@ -1725,32 +1725,79 @@ async function schDelete(date) {
 async function schLoadList() {
   const el = document.getElementById('sch-list');
   el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px;">加载中...</div>';
+
+  const today = new Date().toISOString().slice(0,10);
+
+  // 1. Built-in dates from TP_DATA (all dates, mark as 'builtin')
+  const builtinMap = {};
+  Object.entries(TP_DATA.schedule || {}).forEach(([date, info]) => {
+    builtinMap[date] = { date, singers: info.singers || [], source: 'builtin' };
+  });
+
+  // 2. GAS-saved dates (mark as 'cloud', override builtin if same date)
+  let gasMap = {};
   try {
     const res = await fetch(SV_SCRIPT_URL + '?action=schedules');
     const json = await res.json();
-    const list = json.schedules || [];
-    if (!list.length) {
-      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px;">暂无已保存排班<br>在上方添加后会显示在这里</div>';
-      return;
-    }
-    const today = new Date().toISOString().slice(0,10);
-    el.innerHTML = list.map(s => {
-      const isPast = s.date < today;
-      const dateObj = new Date(s.date + 'T12:00:00');
-      const dateLabel = dateObj.toLocaleDateString('zh-CN', {month:'long', day:'numeric', weekday:'short'});
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);${isPast ? 'opacity:0.45;' : ''}">
-        <div style="min-width:90px;font-size:13px;font-weight:600;${isPast ? '' : 'color:var(--primary);'}">${escHtml(s.date)}</div>
-        <div style="font-size:12px;color:var(--muted);min-width:70px;">${escHtml(dateLabel)}</div>
-        <div style="flex:1;display:flex;flex-wrap:wrap;gap:4px;">
-          ${s.singers.map(n => `<span style="background:var(--primary-light);color:var(--primary);border:1px solid var(--primary-border);border-radius:20px;padding:2px 10px;font-size:12px;">🎤 ${escHtml(n)}</span>`).join('')}
-        </div>
-        <button onclick="schEdit('${escHtml(s.date)}', ${escHtml(JSON.stringify(s.singers))})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">✏️</button>
-        <button onclick="schDelete('${escHtml(s.date)}')" style="background:none;border:1px solid #FCA5A5;color:#DC2626;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">🗑️</button>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    el.innerHTML = '<div style="color:#DC2626;text-align:center;padding:16px;font-size:13px;">加载失败：' + escHtml(e.message) + '</div>';
+    (json.schedules || []).forEach(s => {
+      gasMap[s.date] = { ...s, source: 'cloud' };
+    });
+  } catch(e) {}
+
+  // 3. Merge: GAS overrides builtin for same date; show all dates sorted
+  const merged = Object.values({ ...builtinMap, ...gasMap })
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (!merged.length) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px;">暂无排班数据</div>';
+    return;
   }
+
+  // Count upcoming
+  const upcoming = merged.filter(s => s.date >= today);
+  const past = merged.filter(s => s.date < today);
+
+  let html = '';
+
+  // Header: upcoming count
+  if (upcoming.length) {
+    html += `<div style="font-size:12px;color:var(--muted);padding:8px 0 6px;border-bottom:2px solid var(--border);margin-bottom:6px;display:flex;justify-content:space-between;">
+      <span>📌 未来演出共 <strong style="color:var(--text);">${upcoming.length}</strong> 场，排到 <strong style="color:var(--primary);">${upcoming[upcoming.length-1].date}</strong></span>
+      <span>🔵 内建 &nbsp;☁️ 后台添加</span>
+    </div>`;
+  }
+
+  const renderRow = (s) => {
+    const isPast = s.date < today;
+    const isToday = s.date === today;
+    const dateObj = new Date(s.date + 'T12:00:00');
+    const dateLabel = dateObj.toLocaleDateString('zh-CN', {month:'long', day:'numeric', weekday:'short'});
+    const sourceIcon = s.source === 'cloud' ? '☁️' : '🔵';
+    const canDelete = s.source === 'cloud';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);${isPast ? 'opacity:0.35;' : ''}${isToday ? 'background:#FFF8F5;margin:0 -4px;padding:9px 4px;border-radius:6px;' : ''}">
+      <span style="font-size:14px;">${sourceIcon}</span>
+      <div style="min-width:96px;font-size:13px;font-weight:600;${isToday ? 'color:var(--primary);' : isPast ? 'color:var(--muted);' : ''}">${escHtml(s.date)}</div>
+      <div style="font-size:11px;color:var(--muted);min-width:66px;">${escHtml(dateLabel)}</div>
+      <div style="flex:1;display:flex;flex-wrap:wrap;gap:3px;">
+        ${s.singers.map(n => `<span style="background:var(--primary-light);color:var(--primary);border:1px solid var(--primary-border);border-radius:20px;padding:1px 9px;font-size:11px;">🎤 ${escHtml(n)}</span>`).join('')}
+      </div>
+      ${isToday ? '<span style="font-size:11px;font-weight:700;color:var(--primary);white-space:nowrap;">今晚</span>' : ''}
+      ${canDelete ? `<button onclick="schEdit('${escHtml(s.date)}', ${escHtml(JSON.stringify(s.singers))})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;white-space:nowrap;">✏️</button>
+      <button onclick="schDelete('${escHtml(s.date)}')" style="background:none;border:1px solid #FCA5A5;color:#DC2626;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;white-space:nowrap;">🗑️</button>` : ''}
+    </div>`;
+  };
+
+  // Show upcoming first, then past (collapsed)
+  html += upcoming.map(renderRow).join('');
+
+  if (past.length) {
+    html += `<details style="margin-top:10px;">
+      <summary style="font-size:12px;color:var(--muted);cursor:pointer;padding:6px 0;">过去 ${past.length} 场（点击展开）</summary>
+      <div style="margin-top:6px;">${past.map(renderRow).join('')}</div>
+    </details>`;
+  }
+
+  el.innerHTML = html;
 }
 
 function schEdit(date, singers) {
