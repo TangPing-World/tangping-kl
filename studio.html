@@ -782,6 +782,15 @@ function showModeBadge(text, color) {
 
 async function loadInspiration() {
   const btn = document.getElementById('inspire-btn');
+  if (!window.cowork?.askClaude) {
+    document.getElementById('inspire-container').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">💻</div>
+        <div style="font-weight:600;margin-bottom:6px;">需要 Cowork 桌面应用</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">「内容灵感」功能需要在 Cowork App 中打开后台才能使用。<br>在浏览器直接访问时此功能不可用。</div>
+      </div>`;
+    return;
+  }
   btn.disabled = true;
   btn.textContent = '⏳ 生成中...';
 
@@ -836,6 +845,7 @@ async function loadInspiration() {
 }
 
 function runWeeklyTask() {
+  if (!window.cowork?.runScheduledTask) return;
   const btn = document.getElementById('run-task-btn');
   btn.disabled = true;
   btn.textContent = '⏳ 触发中...';
@@ -852,6 +862,16 @@ function runWeeklyTask() {
 async function loadTrends() {
   const btn = document.getElementById('refresh-btn');
   const icon = document.getElementById('refresh-icon');
+  if (!window.cowork?.callMcpTool) {
+    document.getElementById('trends-container').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">💻</div>
+        <div style="font-weight:600;margin-bottom:6px;">需要 Cowork 桌面应用</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">「本周热点报告」需要读取 Cowork 任务记录，<br>只有在 Cowork App 中打开后台才能使用。<br><br>在浏览器直接访问时，请使用「🎵 点歌系统」和「📅 排班管理」功能。</div>
+      </div>`;
+    document.getElementById('trend-date').textContent = '需要 Cowork App';
+    return;
+  }
   btn.disabled = true;
   icon.textContent = '⏳';
 
