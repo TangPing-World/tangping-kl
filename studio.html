@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>躺平 Content Studio</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --primary: #E8621A;
+      --primary-light: #FFF4EE;
+      --primary-border: #FDC9A8;
+      --bg: #F5F5F5;
+      --card: #FFFFFF;
+      --border: #E5E7EB;
+      --text: #111827;
+      --muted: #6B7280;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-text { font-size: 16px; font-weight: 700; }
+    .logo-text span { color: var(--primary); }
+    .header-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .tabs {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      display: flex;
+    }
+    .tab {
+      padding: 12px 18px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      font-weight: 500;
+    }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .content { padding: 20px; max-width: 760px; margin: 0 auto; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+
+    /* Trend items */
+    .trend-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .trend-title { font-weight: 700; font-size: 15px; }
+    .trend-date { font-size: 12px; color: var(--muted); }
+    .btn-refresh {
+      background: var(--primary-light);
+      border: 1px solid var(--primary-border);
+      color: var(--primary);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .trend-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      background: #FAFAFA;
+    }
+    .trend-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .trend-meta { flex: 1; }
+    .trend-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+    .trend-why { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .heat-badge {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .btn-use-trend {
+      margin-top: 10px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-use-trend:hover { opacity: 0.9; }
+
+    /* Type grid */
+    .section-heading { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .section-sub { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+    .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+    .type-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .type-card:hover { border-color: var(--primary); }
+    .type-card.selected { border-color: var(--primary); background: var(--primary-light); }
+    .type-icon { font-size: 22px; margin-bottom: 6px; }
+    .type-name { font-weight: 600; font-size: 13px; }
+    .type-desc { color: var(--muted); font-size: 11px; margin-top: 3px; line-height: 1.4; }
+    .type-badge {
+      display: inline-block;
+      background: #FEF3C7;
+      color: #92400E;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+    .type-badge.hot { background: #FEE2E2; color: #991B1B; }
+    .type-badge.ok { background: #D1FAE5; color: #065F46; }
+
+    /* Form */
+    .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .back-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 13px; padding: 4px 0;
+    }
+    .back-btn:hover { color: var(--text); }
+    .step-title { font-weight: 600; font-size: 14px; }
+
+    .field { margin-bottom: 14px; }
+    .field:last-of-type { margin-bottom: 20px; }
+    .field label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--muted); margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; outline: none;
+      transition: border 0.15s; color: var(--text); background: white;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--primary); }
+    .field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+    .prefill-badge {
+      display: inline-block;
+      background: #EDE9FE;
+      color: #5B21B6;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: var(--primary); color: white; border: none;
+      padding: 13px 24px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      width: 100%; transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.92; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline {
+      background: white; color: var(--primary);
+      border: 1.5px solid var(--primary);
+      padding: 12px 24px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      width: 100%; margin-top: 10px;
+    }
+
+    /* Output */
+    .output-card {
+      background: var(--card); border-radius: var(--radius);
+      border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px;
+    }
+    .output-block { padding: 16px; border-bottom: 1px solid var(--border); }
+    .output-block:last-child { border-bottom: none; }
+    .output-label-row {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 10px;
+    }
+    .output-label-text { font-weight: 600; font-size: 13px; }
+    .btn-copy {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 5px 12px; border-radius: 6px; font-size: 12px;
+      cursor: pointer; font-weight: 500; transition: all 0.15s;
+    }
+    .btn-copy:hover { background: var(--border); }
+    .btn-copy.copied { background: #D1FAE5; border-color: #10B981; color: #065F46; }
+    .output-text { white-space: pre-wrap; font-size: 14px; line-height: 1.7; }
+    .output-code {
+      white-space: pre-wrap; font-size: 13px; line-height: 1.6;
+      background: #F9FAFB; padding: 12px; border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .tip-box {
+      background: var(--primary-light); border: 1px solid var(--primary-border);
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 13px; color: #7C2D12; margin-bottom: 12px; line-height: 1.5;
+    }
+
+    /* Loading */
+    .loading-state {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 48px 24px; gap: 16px; color: var(--muted); font-size: 14px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Guide */
+    .guide-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; margin-bottom: 14px; }
+    .guide-title { font-weight: 700; font-size: 15px; margin-bottom: 16px; }
+    .guide-step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+    .step-num {
+      width: 22px; height: 22px; background: var(--primary); color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+    .step-text { font-size: 13px; line-height: 1.6; }
+    .step-text strong { color: var(--primary); }
+    .tool-url {
+      display: inline-block; background: #F3F4F6; border: 1px solid var(--border);
+      padding: 3px 9px; border-radius: 6px; font-size: 12px; font-weight: 600; font-family: monospace;
+    }
+    .workflow-step {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .wf-icon {
+      width: 34px; height: 34px; background: var(--primary-light);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 17px; flex-shrink: 0;
+    }
+    .wf-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+    .wf-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+    .empty-state { text-align: center; padding: 40px 24px; color: var(--muted); font-size: 13px; }
+    .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  
+    /* ─── 点歌系统 styles ─── */
+    .subtab-bar { display:flex; gap:6px; margin-bottom:16px; }
+    .subtab-btn {
+      flex:1; padding:10px; border-radius:10px; border:1.5px solid var(--border);
+      background:var(--card); font-size:13px; font-weight:600; cursor:pointer; color:var(--muted);
+      transition: all 0.15s;
+    }
+    .subtab-btn.active { background:var(--primary); color:white; border-color:var(--primary); }
+
+    /* Voting mode fullscreen overlay */
+    .vote-mode-active { position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999; overflow:auto; background:#0D0D0D; }
+    .vote-header { background:#111; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222; }
+    .vote-logo { color:#E8621A; font-weight:700; font-size:16px; }
+    .vote-tonight { color:#888; font-size:12px; margin-top:2px; }
+    .vote-counter { background:#E8621A; color:white; font-size:12px; font-weight:700; padding:6px 14px; border-radius:20px; }
+    .vote-instructions { padding:14px 20px; text-align:center; color:#AAA; font-size:13px; background:#161616; border-bottom:1px solid #222; }
+    .vote-instructions strong { color:#E8621A; }
+    .vote-songs-grid { padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .vote-song-card {
+      background:#1A1A1A; border:1.5px solid #2A2A2A; border-radius:10px;
+      padding:12px 14px; cursor:pointer; transition:all 0.15s; user-select:none;
+    }
+    .vote-song-card:active { transform:scale(0.97); }
+    .vote-song-card.selected { background:#2A1200; border-color:#E8621A; }
+    .vote-song-title { font-size:13px; font-weight:600; color:#F0F0F0; margin-bottom:3px; line-height:1.3; }
+    .vote-song-card.selected .vote-song-title { color:#E8621A; }
+    .vote-song-singer { font-size:11px; color:#666; }
+    .vote-song-card.selected .vote-song-singer { color:#A84310; }
+    .vote-song-check { float:right; margin-top:2px; font-size:14px; opacity:0; }
+    .vote-song-card.selected .vote-song-check { opacity:1; }
+    .vote-footer { position:sticky; bottom:0; background:#111; border-top:1px solid #222; padding:14px 16px; }
+    .vote-submit-btn {
+      width:100%; padding:14px; background:#E8621A; color:white;
+      border:none; border-radius:12px; font-size:15px; font-weight:700;
+      cursor:pointer; transition:opacity 0.15s;
+    }
+    .vote-submit-btn:disabled { opacity:0.35; cursor:not-allowed; }
+    .vote-submit-btn:not(:disabled):active { opacity:0.85; }
+    .vote-thanks { display:none; flex-direction:column; align-items:center; justify-content:center;
+      height:80vh; text-align:center; color:#F0F0F0; }
+    .vote-thanks .thanks-icon { font-size:60px; margin-bottom:20px; }
+    .vote-thanks .thanks-title { font-size:22px; font-weight:700; color:#E8621A; margin-bottom:10px; }
+    .vote-thanks .thanks-sub { font-size:14px; color:#888; }
+
+    /* Director mode */
+    .director-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+    .director-date-row { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+    .director-date-row input { flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+    .btn-sm { padding:8px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:none; }
+    .btn-sm.primary { background:var(--primary); color:white; }
+    .btn-sm.outline { background:white; color:var(--primary); border:1.5px solid var(--primary); }
+    .tonight-badge { display:inline-flex; align-items:center; gap:6px; background:var(--primary-light);
+      border:1px solid var(--primary-border); border-radius:8px; padding:6px 12px; margin-bottom:12px; font-size:13px; }
+    .vote-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .vote-table th { text-align:left; padding:8px 10px; color:var(--muted); font-weight:600; font-size:11px;
+      text-transform:uppercase; border-bottom:2px solid var(--border); }
+    .vote-table td { padding:9px 10px; border-bottom:1px solid var(--border); }
+    .vote-bar { height:6px; background:var(--primary); border-radius:3px; min-width:4px; }
+    .setlist-item {
+      display:flex; align-items:center; gap:10px; padding:10px 12px;
+      background:var(--card); border:1px solid var(--border); border-radius:8px; margin-bottom:6px;
+    }
+    .setlist-set-label { font-size:10px; font-weight:700; color:var(--primary); background:var(--primary-light);
+      padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    .setlist-song { flex:1; }
+    .setlist-song-title { font-size:13px; font-weight:600; }
+    .setlist-song-meta { font-size:11px; color:var(--muted); }
+    .setlist-votes { font-size:12px; color:var(--primary); font-weight:700; min-width:28px; text-align:right; }
+    .setlist-move { background:none; border:1px solid var(--border); border-radius:5px; padding:3px 6px;
+      cursor:pointer; font-size:11px; color:var(--muted); }
+    .setlist-move:hover { background:var(--border); }
+    .empty-votes { text-align:center; padding:30px; color:var(--muted); font-size:13px; }
+    .section-divider { margin:16px 0 10px; font-weight:700; font-size:13px; color:var(--text);
+      padding-bottom:6px; border-bottom:2px solid var(--primary); }
+
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div style="font-size:22px;">🌿</div>
+  <div>
+    <div class="logo-text">躺平 <span>Content Studio</span></div>
+    <div class="header-sub">员工内容生成工具 · tangping.kl</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-btn-trends" onclick="showTab('trends')">🔥 本周热点</button>
+  <button class="tab" id="tab-btn-generate" onclick="showTab('generate')">✍️ 生成内容</button>
+  <button class="tab" id="tab-btn-songvote" onclick="showTab('songvote')">🎵 点歌系统</button>
+  <button class="tab" id="tab-btn-guide" onclick="showTab('guide')">📋 使用指南</button>
+</div>
+
+<div class="content">
+
+  <!-- ══════════ 本周热点 TAB ══════════ -->
+  <div id="tab-trends">
+
+    <!-- 每周报告 -->
+    <div class="card">
+      <div class="trend-header-row">
+        <div>
+          <div class="trend-title">🔥 本周热点报告</div>
+          <div class="trend-date" id="trend-date">点击「读取报告」获取最新数据</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-refresh" id="run-task-btn" onclick="runWeeklyTask()">▶ 重新生成</button>
+          <button class="btn-refresh" id="refresh-btn" onclick="loadTrends()" style="background:var(--primary);color:white;border-color:var(--primary);">
+            <span id="refresh-icon">↓</span> 读取报告
+          </button>
+        </div>
+      </div>
+      <div id="task-status" style="display:none;margin-bottom:12px;font-size:13px;padding:10px 14px;background:#F0FDF4;border-radius:8px;color:#166534;border:1px solid #BBF7D0;">
+        ✅ 报告生成中（约1-2分钟），完成后点「读取报告」
+      </div>
+      <div id="mode-badge" style="display:none;margin-bottom:10px;font-size:12px;padding:6px 12px;border-radius:8px;"></div>
+      <div id="trends-container">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <div style="font-weight:600;margin-bottom:6px;">选择热点来源</div>
+          <div style="font-size:12px;line-height:1.8;">
+            📡 <strong>读取报告</strong>：从每周定时任务读取真实搜索数据<br>
+            ✨ <strong>内容灵感</strong>：根据躺平历史爆款规律AI生成建议
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 内容灵感 -->
+    <div class="card">
+      <div class="trend-header-row">
+        <div>
+          <div class="trend-title">✨ 内容灵感推荐</div>
+          <div class="trend-date">根据躺平历史爆款规律 AI 推荐</div>
+        </div>
+        <button class="btn-refresh" id="inspire-btn" onclick="loadInspiration()">✨ 生成灵感</button>
+      </div>
+      <div id="inspire-container">
+        <div class="empty-state">
+          <div class="empty-icon">💡</div>
+          <div>点「生成灵感」获取内容建议</div>
+          <div style="margin-top:6px;font-size:12px;">基于躺平历史爆款数据，无需等待每周报告</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════ 生成内容 TAB ══════════ -->
+  <div id="tab-generate" style="display:none;">
+
+    <div id="step-type">
+      <div class="section-heading">选择内容类型</div>
+      <div class="section-sub">根据今天要发的内容选择，AI 按躺平风格生成文案和提示词</div>
+      <div class="type-grid">
+        <div class="type-card" onclick="selectType('trending_song', this)">
+          <div class="type-icon">🎵</div>
+          <div class="type-name">热门歌曲现场</div>
+          <div class="type-desc">结合当下爆款歌曲发现场视频</div>
+          <div class="type-badge hot">🔥 最高爆款率</div>
+        </div>
+        <div class="type-card" onclick="selectType('singalong', this)">
+          <div class="type-icon">🎤</div>
+          <div class="type-name">大合唱现场</div>
+          <div class="type-desc">全场齐唱现场，600人合唱感</div>
+          <div class="type-badge hot">🔥 高互动</div>
+        </div>
+        <div class="type-card" onclick="selectType('event', this)">
+          <div class="type-icon">🌸</div>
+          <div class="type-name">特色活动宣传</div>
+          <div class="type-desc">花雨、主题夜、节日特别活动</div>
+          <div class="type-badge ok">✅ 稳定高赞</div>
+        </div>
+        <div class="type-card" onclick="selectType('story', this)">
+          <div class="type-icon">😂</div>
+          <div class="type-name">趣味内部故事</div>
+          <div class="type-desc">幕后趣事、微信截图、老板故事</div>
+          <div class="type-badge ok">✅ 增加亲近感</div>
+        </div>
+        <div class="type-card" onclick="selectType('schedule', this)">
+          <div class="type-icon">📅</div>
+          <div class="type-name">演出节目表</div>
+          <div class="type-desc">发布周/月演出安排（配故事感文案）</div>
+          <div class="type-badge">需配合视频</div>
+        </div>
+        <div class="type-card" onclick="selectType('promo', this)">
+          <div class="type-icon">🍺</div>
+          <div class="type-name">优惠活动</div>
+          <div class="type-desc">Happy Hour、套餐、节日优惠</div>
+          <div class="type-badge">需情感包装</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-form" style="display:none;">
+      <div class="step-header">
+        <button class="back-btn" onclick="backToTypes()">← 返回</button>
+        <div class="step-title" id="form-title"></div>
+      </div>
+      <div class="card">
+        <div id="prefill-notice" style="display:none;">
+          <div class="prefill-badge">✨ 已从热点自动填入</div>
+        </div>
+        <div id="form-fields"></div>
+        <button class="btn-primary" id="gen-btn" onclick="generateContent()">✨ AI 生成内容</button>
+      </div>
+    </div>
+
+    <div id="step-output" style="display:none;">
+      <div class="step-header">
+        <button class="back-btn" onclick="backToForm()">← 修改</button>
+        <div class="step-title">✅ 内容已生成，复制使用</div>
+      </div>
+      <div id="output-container"></div>
+      <button class="btn-outline" onclick="backToTypes()">＋ 生成新内容</button>
+    </div>
+
+  </div>
+
+
+  <!-- ══════════ 点歌系统 TAB ══════════ -->
+  <div id="tab-songvote" style="display:none;">
+
+    <!-- Sub-tab bar -->
+    <div class="subtab-bar">
+      <button class="subtab-btn active" id="sv-btn-vote" onclick="svShowMode('vote')">📊 投票数据</button>
+      <button class="subtab-btn" id="sv-btn-director" onclick="svShowMode('director')">🎼 排歌后台</button>
+      <button class="subtab-btn" id="sv-btn-settings" onclick="svShowMode('settings')">⚙️ 设置</button>
+    </div>
+
+    <!-- ── VOTE DATA ── -->
+    <div id="sv-vote">
+      <div class="card">
+        <div class="trend-header-row">
+          <div>
+            <div class="trend-title">📊 今日投票统计</div>
+            <div class="trend-date" id="sv-vote-count-label">—</div>
+          </div>
+          <button class="btn-refresh" id="sv-refresh-btn" onclick="svLoadVotes()">↻ 刷新</button>
+        </div>
+        <div id="sv-vote-stats">
+          <div class="empty-votes">点「刷新」读取今日投票数据</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div id="sv-settings" style="display:none;">
+      <div class="card">
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px;">⚙️ 连接设置</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+          完成 Google Apps Script 部署后，把 URL 填在这里。<br>顾客在投票页提交后，数据会自动同步到这个后台。
+        </div>
+        <div class="field">
+          <label>Google Apps Script URL</label>
+          <input type="text" id="sv-script-url-input" placeholder="https://script.google.com/macros/s/.../exec" />
+        </div>
+        <button class="btn-primary" onclick="svSaveUrl()" style="font-size:13px;padding:11px;">保存 URL</button>
+        <div id="sv-url-saved" style="display:none;margin-top:10px;font-size:13px;color:#22C55E;">✅ 已保存</div>
+      </div>
+      <div class="card" style="background:#FFFBEB;border-color:#FDE68A;">
+        <div style="font-weight:600;font-size:13px;color:#92400E;margin-bottom:10px;">📋 部署步骤（等拿到 Google 账号后）</div>
+        <div style="font-size:12px;color:#78350F;line-height:1.9;">
+          1. 打开 <strong>script.google.com</strong>，用躺平 Google 账号登录<br>
+          2. 新建项目，粘贴 <strong>tangping_apps_script.gs</strong> 的代码<br>
+          3. 「部署」→「新建部署」→ 类型选「网络应用」<br>
+          4. 执行身份：「我」；有权访问：「所有人」<br>
+          5. 点「部署」→ 复制生成的 URL 填到上面<br>
+          6. 同样把 URL 填入 <strong>tangping-vote.html</strong> 第一行 <code>VOTE_ENDPOINT</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DIRECTOR MODE ── -->
+    <div id="sv-director" style="display:none;">
+      <div class="card">
+        <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🎼 今晚歌单编排</div>
+        <div class="director-date-row">
+          <input type="date" id="sv-date" />
+          <button class="btn-sm primary" onclick="svLoadForDate()">加载</button>
+        </div>
+        <div id="sv-tonight-singers" style="margin-bottom:12px;"></div>
+        <button class="btn-primary" id="sv-ai-btn" onclick="svGenerateSetlist()">✨ AI 排歌（根据投票）</button>
+      </div>
+
+      <div id="sv-setlist-container"></div>
+
+      <div id="sv-confirm-area" style="display:none;">
+        <div class="card" style="background:var(--primary-light);border-color:var(--primary-border);">
+          <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:10px;">✅ 已确认今晚歌单</div>
+          <div id="sv-confirmed-text" style="font-size:13px;white-space:pre-wrap;line-height:1.8;"></div>
+          <button class="btn-sm outline" style="margin-top:12px;" onclick="svCopySetlist()">📋 复制歌单</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════ FULLSCREEN VOTING OVERLAY ══════════ -->
+  <div id="sv-fullscreen" style="display:none;">
+    <div class="vote-header">
+      <div>
+        <div class="vote-logo">🌿 躺平 今晚点歌</div>
+        <div class="vote-tonight" id="sv-fs-tonight"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="vote-counter" id="sv-fs-counter">0 / 5</div>
+        <button onclick="svExitVotingMode()" style="background:#333;color:#999;border:none;padding:6px 10px;border-radius:6px;font-size:11px;cursor:pointer;">退出</button>
+      </div>
+    </div>
+    <div class="vote-instructions">选出你最想听的 <strong>5 首歌</strong>，今晚歌手将优先演唱票数最高的歌曲 🎶</div>
+    <div id="sv-fs-songs" class="vote-songs-grid"></div>
+    <div id="sv-fs-thanks" class="vote-thanks">
+      <div class="thanks-icon">🎉</div>
+      <div class="thanks-title">谢谢你的投票！</div>
+      <div class="thanks-sub">你选的歌今晚有机会被演唱<br>好好享受今晚的音乐 🎵</div>
+    </div>
+    <div class="vote-footer">
+      <button class="vote-submit-btn" id="sv-fs-submit" disabled onclick="svSubmitVote()">
+        选好了，提交（<span id="sv-fs-count">0</span>/5）
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ 使用指南 TAB ══════════ -->
+  <div id="tab-guide" style="display:none;">
+    <div class="guide-card">
+      <div class="guide-title">🔄 完整内容发布流程</div>
+      <div class="workflow-step">
+        <div class="wf-icon">📊</div>
+        <div><div class="wf-title">每周一：看本周热点</div><div class="wf-desc">打开「本周热点」标签 → 点刷新 → AI 搜索本周马来西亚华人圈最热内容</div></div>
+      </div>
+      <div class="workflow-step">
+        <div class="wf-icon">✍️</div>
+        <div><div class="wf-title">点热点直接生成内容</div><div class="wf-desc">点「用这个热点生成内容」→ 自动跳到生成页并填好信息 → AI 生成文案和提示词</div></div>
+      </div>
+      <div class="workflow-step">
+        <div class="wf-icon">🎬</div>
+        <div><div class="wf-title">生成视频：可灵 AI</div><div class="wf-desc">复制可灵提示词 → 打开 <span class="tool-url">kling.kuaishou.com</span> → 文生视频，9:16 竖屏</div></div>
+      </div>
+      <div class="workflow-step">
+        <div class="wf-icon">🖼️</div>
+        <div><div class="wf-title">生成图片：即梦 AI</div><div class="wf-desc">复制即梦提示词 → 打开 <span class="tool-url">jimeng.jianying.com</span> → 图片生成，4:5 比例</div></div>
+      </div>
+      <div class="workflow-step">
+        <div class="wf-icon">✂️</div>
+        <div><div class="wf-title">微调后发布</div><div class="wf-desc">剪映加字幕（视频）或 Canva 加 logo（图片）→ 发布到 IG、小红书、抖音</div></div>
+      </div>
+    </div>
+
+    <div class="guide-card">
+      <div class="guide-title">🎬 可灵 AI 使用教程</div>
+      <div class="guide-step"><div class="step-num">1</div><div class="step-text">打开 <span class="tool-url">kling.kuaishou.com</span>，登录账号</div></div>
+      <div class="guide-step"><div class="step-num">2</div><div class="step-text">点「<strong>文生视频</strong>」，粘贴可灵提示词</div></div>
+      <div class="guide-step"><div class="step-num">3</div><div class="step-text">比例选 <strong>9:16</strong>，时长选 5 或 10 秒，生成 2-3 个版本选最好的</div></div>
+      <div class="guide-step"><div class="step-num">4</div><div class="step-text">下载后导入剪映加字幕和音乐完成</div></div>
+      <div class="tip-box">💡 每天有免费额度，够做预告视频。付费版约 RM45/月适合高频使用。</div>
+    </div>
+
+    <div class="guide-card">
+      <div class="guide-title">🖼️ 即梦 AI 使用教程</div>
+      <div class="guide-step"><div class="step-num">1</div><div class="step-text">打开 <span class="tool-url">jimeng.jianying.com</span>，用抖音账号登录</div></div>
+      <div class="guide-step"><div class="step-num">2</div><div class="step-text">点「<strong>图片生成</strong>」，粘贴即梦提示词</div></div>
+      <div class="guide-step"><div class="step-num">3</div><div class="step-text">比例选 <strong>4:5</strong>，生成 4 张选最好的</div></div>
+      <div class="guide-step"><div class="step-num">4</div><div class="step-text">下载后在 Canva 加躺平 logo 和活动信息后发布</div></div>
+      <div class="tip-box">💡 图片里有乱码文字不用重新生成，直接在 Canva 用文字图层覆盖即可。</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Brand context ───
+const BRAND = `
+你是躺平 Tăng Píng KL（Instagram: @tangping.kl）的社交媒体文案专家。
+躺平是马来西亚吉隆坡Subang SS13的地下丛林音乐公园Livehouse，每天有现场演出和DJ。
+Instagram粉丝：87.9K。主要受众：马来西亚华人，18-35岁。
+Slogan："一个让心休息的地方"
+文案风格：马来西亚华人口语，轻松亲切，短句换行，情感代入，不硬卖。
+`;
+
+// ─── Content types ───
+const TYPES = {
+  trending_song: {
+    label: '🎵 热门歌曲现场',
+    fields: [
+      { id: 'song', label: '歌曲名称', type: 'text', placeholder: '例：修炼爱情、天后、《逐玉》一念' },
+      { id: 'artist', label: '原唱 / 来自剧集', type: 'text', placeholder: '例：周杰伦 / 剧集《逐玉》张凌赫&田曦薇' },
+      { id: 'mood', label: '现场氛围关键词', type: 'text', placeholder: '例：全场大合唱、催泪、热血沸腾' },
+      { id: 'date', label: '活动日期（可选）', type: 'text', placeholder: '例：本周五 6/5 / 今晚' },
+    ],
+    extra: '生成热门歌曲现场视频帖子。开场钩子要强，情绪共鸣，让人很想去现场，文末有互动问题和预约CTA。'
+  },
+  singalong: {
+    label: '🎤 大合唱现场',
+    fields: [
+      { id: 'song', label: '合唱歌曲', type: 'text', placeholder: '例：我还是爱着你、天后' },
+      { id: 'crowd', label: '参与人数（估计）', type: 'text', placeholder: '例：600人、满场约400人' },
+      { id: 'moment', label: '最难忘的瞬间', type: 'text', placeholder: '例：全场举手机灯、有人哭了' },
+      { id: 'date', label: '日期（可选）', type: 'text', placeholder: '例：上周五' },
+    ],
+    extra: '生成大合唱现场视频帖子。突出人数和氛围，"错过可惜"的紧迫感，有互动问题。'
+  },
+  event: {
+    label: '🌸 特色活动宣传',
+    fields: [
+      { id: 'name', label: '活动名称', type: 'text', placeholder: '例：花雨夜、圣诞专场' },
+      { id: 'date', label: '活动日期', type: 'text', placeholder: '例：8/5（五）到 10/5（日）' },
+      { id: 'highlight', label: '最大卖点/特色', type: 'text', placeholder: '例：全马第一家花雨音乐餐厅' },
+      { id: 'price', label: '票价/优惠（可选）', type: 'text', placeholder: '例：免费入场 / RM128含双人套餐' },
+      { id: 'vibe', label: '适合什么人去', type: 'text', placeholder: '例：带另一半、闺蜜聚会' },
+    ],
+    extra: '生成特色活动宣传帖。情感化语言，"不去会后悔"，突出独特性和仪式感，末尾有预约CTA。'
+  },
+  story: {
+    label: '😂 趣味内部故事',
+    fields: [
+      { id: 'story', label: '故事梗概（简单说说发生了什么）', type: 'textarea', placeholder: '例：老板娘跟员工打赌说如果今晚来350人就叫Hazel出来请全场喝酒，结果真的达到了...' },
+      { id: 'tone', label: '内容基调', type: 'select', options: ['😂 搞笑轻松', '🥹 温馨感人', '🔥 励志正能量'] },
+    ],
+    extra: '生成趣味内部故事帖。第一人称或对话形式，真实感强，有反转或惊喜结尾，让人想@朋友。'
+  },
+  schedule: {
+    label: '📅 演出节目表',
+    fields: [
+      { id: 'period', label: '时间段', type: 'text', placeholder: '例：本周 11/5（一）到 17/5（日）' },
+      { id: 'artists', label: '艺人/节目亮点（每行一个）', type: 'textarea', placeholder: '例：\n周一：治愈系歌手 Miniyu\n周四：DJ大合唱 Kopi林国伟\n周六：RAP vs RNB 对决' },
+      { id: 'highlight', label: '本周最大亮点', type: 'text', placeholder: '例：周四林国伟Kopi特别回归！' },
+    ],
+    extra: '生成演出节目表帖子。【重要】必须写有故事感、有期待感的正文，让人觉得"这周真的有戏看"，不能只列节目表。'
+  },
+  promo: {
+    label: '🍺 优惠活动',
+    fields: [
+      { id: 'offer', label: '优惠内容', type: 'text', placeholder: '例：Happy Hour RM8.8 Tiger Beer' },
+      { id: 'time', label: '优惠时间', type: 'text', placeholder: '例：每天 6pm-8pm（周日-周四）' },
+      { id: 'angle', label: '目标场景/人群', type: 'text', placeholder: '例：下班解压、周中约会' },
+    ],
+    extra: '生成优惠活动帖子。用场景感和情绪带入，让人觉得这个优惠是"为我量身定制的"，突出"值得"的感觉。'
+  }
+};
+
+let currentType = null;
+let prefillData = null;
+
+// ─── Tabs ───
+function showTab(tab) {
+  ['trends','generate','guide','songvote'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
+    document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'songvote') svInit();
+}
+
+// ─── Trends ───
+function showModeBadge(text, color) {
+  const b = document.getElementById('mode-badge');
+  b.style.display = '';
+  b.style.background = color === 'green' ? '#F0FDF4' : '#EEF2FF';
+  b.style.color = color === 'green' ? '#166534' : '#3730A3';
+  b.style.border = '1px solid ' + (color === 'green' ? '#BBF7D0' : '#C7D2FE');
+  b.textContent = text;
+}
+
+async function loadInspiration() {
+  const btn = document.getElementById('inspire-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中...';
+
+  const now = new Date();
+  const dateStr = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
+
+  document.getElementById('inspire-container').innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div>AI 根据躺平历史爆款规律生成内容灵感...</div>
+      <div style="font-size:12px;margin-top:4px;">大约需要 10-15 秒</div>
+    </div>`;
+
+  const prompt = `你是躺平 Tăng Píng KL 的内容策略顾问。今天是${dateStr}。
+
+躺平是马来西亚吉隆坡Subang SS13的地下丛林音乐公园Livehouse（Instagram: @tangping.kl）。粉丝87.9K，受众马来西亚华人18-35岁。
+
+躺平历史真实爆款数据：
+1. 《修炼爱情》+《跳楼机》现场视频 → 76,800赞（史上最高）
+2. 《逐玉》OST《一念》刮痧BGM现场 → 3,087赞
+3. 《我还是爱着你》600人合唱 → 2,387赞
+4. 《天后》600人合唱 → 782赞
+5. 花雨特色活动情感文案 → 821赞
+6. 微信聊天截图趣味故事 → 399赞
+7. 纯演出海报 → 84-96赞（最差）
+
+规律：现场视频+当下KTV神曲/热剧OST = 爆款公式；大合唱视频稳定高赞；情感共鸣文案有效；纯海报无效。
+
+根据以上规律，推荐5个具体可执行的内容方向，要有具体的歌曲名或主题，不要泛泛而谈。
+
+只输出JSON，不加任何其他文字，从{直接开始到}结束：
+{"date":"${dateStr}灵感","trends":[{"name":"内容方向名称（具体）","type":"歌曲","heat":"🔥🔥🔥🔥🔥","why":"为什么高潜力，一句话","content_type":"trending_song","prefill":{"song":"具体歌名","artist":"具体歌手","mood":"氛围关键词"}},{"name":"内容方向名称2","type":"大合唱","heat":"🔥🔥🔥🔥","why":"为什么高潜力","content_type":"singalong","prefill":{"song":"具体歌名","crowd":"估计人数","moment":"亮点瞬间"}},{"name":"内容方向名称3","type":"剧集OST","heat":"🔥🔥🔥🔥","why":"为什么高潜力","content_type":"trending_song","prefill":{"song":"OST名","artist":"剧名","mood":"氛围"}},{"name":"内容方向名称4","type":"活动","heat":"🔥🔥🔥","why":"为什么高潜力","content_type":"event","prefill":{"name":"活动名","date":"建议时间","highlight":"卖点","vibe":"适合人群"}},{"name":"内容方向名称5","type":"故事","heat":"🔥🔥🔥","why":"为什么高潜力","content_type":"story","prefill":{"story":"故事梗概","tone":"😂 搞笑轻松"}}]}`;
+
+  try {
+    const result = await window.cowork.askClaude(prompt, []);
+    let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
+    let data = null;
+    try { data = JSON.parse(raw.trim()); } catch(e) {}
+    if (!data) { const cb = raw.match(/```(?:json)?\s*([\s\S]*?)```/); if (cb) try { data = JSON.parse(cb[1].trim()); } catch(e) {} }
+    if (!data) { const s = raw.indexOf('{'), e = raw.lastIndexOf('}'); if (s !== -1 && e > s) try { data = JSON.parse(raw.slice(s, e+1)); } catch(e) {} }
+    if (!data) { const m = raw.match(/"trends"\s*:\s*(\[[\s\S]*?\])/); if (m) try { data = { date: dateStr, trends: JSON.parse(m[1]) }; } catch(e) {} }
+    if (!data || !data.trends || !data.trends.length) throw new Error('生成失败，请重试');
+    renderTrends(data.trends, 'inspire-container');
+  } catch (err) {
+    document.getElementById('inspire-container').innerHTML = `
+      <div class="empty-state"><div class="empty-icon">⚠️</div><div>生成失败，请重试</div>
+      <div style="margin-top:6px;font-size:12px;color:#999;">${escHtml(err.message)}</div></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ 内容灵感';
+  }
+}
+
+function runWeeklyTask() {
+  const btn = document.getElementById('run-task-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 触发中...';
+  try {
+    window.cowork.runScheduledTask('tangping-weekly-trends');
+  } catch(e) {}
+  setTimeout(() => {
+    document.getElementById('task-status').style.display = '';
+    btn.disabled = false;
+    btn.textContent = '▶ 现在生成本周报告';
+  }, 1500);
+}
+
+async function loadTrends() {
+  const btn = document.getElementById('refresh-btn');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.textContent = '⏳';
+
+  const now = new Date();
+  const dateStr = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
+
+  document.getElementById('trends-container').innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div>正在读取每周报告...</div>
+      <div style="font-size:12px;margin-top:4px;">从「躺平每周趋势追踪」任务中读取真实数据</div>
+    </div>`;
+
+  try {
+    // Step 1: List sessions to find the latest "Tangping weekly trends" session
+    let sessionsRaw;
+    try {
+      sessionsRaw = await window.cowork.callMcpTool('mcp__session_info__list_sessions', { limit: 30 });
+    } catch(e) {
+      throw new Error('无法读取任务列表：' + e.message);
+    }
+    const sessionsStr = typeof sessionsRaw === 'string' ? sessionsRaw : JSON.stringify(sessionsRaw);
+
+    // Find session ID for Tangping weekly trends (case-insensitive, various title formats)
+    let sessionId = null;
+    // Try to parse as JSON array first
+    try {
+      const parsed = typeof sessionsRaw === 'string' ? JSON.parse(sessionsRaw) : sessionsRaw;
+      const arr = Array.isArray(parsed) ? parsed : (parsed?.sessions || parsed?.data || []);
+      const match = arr.find(s => {
+        const t = (s.title || s.name || '').toLowerCase();
+        return t.includes('tangping') || t.includes('躺平') || t.includes('weekly') || t.includes('trend');
+      });
+      if (match) sessionId = match.id || match.session_id;
+    } catch(e) {}
+
+    // Fallback: regex match in raw string
+    if (!sessionId) {
+      // Look for session ID near title keywords
+      const patterns = [
+        /["']id["']\s*:\s*["']([^"']+)["'][^}]*["'](?:title|name)["']\s*:\s*["'][^"']*(?:tangping|躺平|weekly|trend)[^"']*["']/i,
+        /["'](?:title|name)["']\s*:\s*["'][^"']*(?:tangping|躺平|weekly|trend)[^"']*["'][^}]*["']id["']\s*:\s*["']([^"']+)["']/i,
+      ];
+      for (const p of patterns) {
+        const m = sessionsStr.match(p);
+        if (m) { sessionId = m[1]; break; }
+      }
+    }
+
+    if (!sessionId) {
+      document.getElementById('trends-container').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div style="font-weight:600;margin-bottom:8px;">还没有每周报告</div>
+          <div style="font-size:12px;line-height:1.6;">点「▶ 重新生成」先生成本周报告（约1-2分钟）<br>完成后再点「↓ 读取报告」<br><br>或者点「✨ 内容灵感」用AI历史数据生成建议</div>
+        </div>`;
+      document.getElementById('trend-date').textContent = '暂无报告';
+      document.getElementById('mode-badge').style.display = 'none';
+      return;
+    }
+
+    // Step 2: Read the transcript of that session
+    document.getElementById('trends-container').innerHTML = `
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <div>正在读取报告内容...</div>
+      </div>`;
+
+    let transcriptRaw;
+    try {
+      transcriptRaw = await window.cowork.callMcpTool('mcp__session_info__read_transcript', {
+        session_id: sessionId,
+        limit: 10,
+        max_wait_seconds: 0
+      });
+    } catch(e) {
+      throw new Error('读取报告失败：' + e.message);
+    }
+    const transcriptStr = typeof transcriptRaw === 'string' ? transcriptRaw : JSON.stringify(transcriptRaw);
+
+    if (!transcriptStr || transcriptStr.length < 100) {
+      throw new Error('报告内容为空，请先点「重新生成」');
+    }
+
+    // Step 3: Use askClaude to extract structured trend cards from the report
+    document.getElementById('trends-container').innerHTML = `
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <div>AI 正在从报告提取热点卡片...</div>
+      </div>`;
+
+    const parsePrompt = `以下是躺平 Tăng Píng KL（@tangping.kl）的每周热点研究报告。
+
+请从报告中提取5个最适合躺平创作的热点内容方向，输出为JSON。
+
+报告内容：
+${transcriptStr.slice(0, 6000)}
+
+躺平爆款规律：现场视频+当下KTV神曲/热剧OST = 爆款公式；大合唱视频稳定高赞；情感共鸣文案有效。
+
+只输出JSON，从{直接开始，不要加任何说明文字：
+{"date":"${dateStr}更新","trends":[
+{"name":"热点名称（具体）","type":"类型（歌曲/剧集/活动/话题）","heat":"🔥🔥🔥🔥🔥","why":"为什么高潜力，一句话","content_type":"trending_song","prefill":{"song":"具体歌名","artist":"原唱或剧名","mood":"氛围关键词"}},
+{"name":"热点名称2","type":"类型","heat":"🔥🔥🔥🔥","why":"为什么","content_type":"singalong","prefill":{"song":"歌名","crowd":"估计人数","moment":"亮点"}},
+{"name":"热点名称3","type":"类型","heat":"🔥🔥🔥🔥","why":"为什么","content_type":"trending_song","prefill":{"song":"歌名","artist":"歌手","mood":"氛围"}},
+{"name":"热点名称4","type":"类型","heat":"🔥🔥🔥","why":"为什么","content_type":"event","prefill":{"name":"活动名","date":"建议时间","highlight":"卖点","vibe":"适合人群"}},
+{"name":"热点名称5","type":"类型","heat":"🔥🔥🔥","why":"为什么","content_type":"story","prefill":{"story":"故事梗概","tone":"😂 搞笑轻松"}}
+]}`;
+
+    const aiResult = await window.cowork.askClaude(parsePrompt, []);
+    let raw = typeof aiResult === 'string' ? aiResult : (aiResult?.text ?? aiResult?.content ?? aiResult?.completion ?? JSON.stringify(aiResult));
+
+    // Robust JSON extraction
+    let data = null;
+    try { data = JSON.parse(raw.trim()); } catch(e) {}
+    if (!data) {
+      const cb = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (cb) try { data = JSON.parse(cb[1].trim()); } catch(e) {}
+    }
+    if (!data) {
+      const start = raw.indexOf('{');
+      const end = raw.lastIndexOf('}');
+      if (start !== -1 && end > start) try { data = JSON.parse(raw.slice(start, end + 1)); } catch(e) {}
+    }
+    if (!data) {
+      const arrMatch = raw.match(/"trends"\s*:\s*(\[[\s\S]*?\])/);
+      if (arrMatch) try { data = { date: dateStr, trends: JSON.parse(arrMatch[1]) }; } catch(e) {}
+    }
+
+    if (!data || !data.trends || !data.trends.length) {
+      throw new Error('无法解析热点数据，请重试');
+    }
+
+    document.getElementById('trend-date').textContent = (data.date || dateStr) + ' · 来自每周报告';
+    showModeBadge('📡 实时报告 — 基于每周真实搜索数据', 'green');
+    renderTrends(data.trends);
+
+  } catch (err) {
+    document.getElementById('trends-container').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <div>读取失败，请重试</div>
+        <div style="margin-top:6px;font-size:12px;color:#999;">${escHtml(err.message)}</div>
+      </div>`;
+  } finally {
+    btn.disabled = false;
+    icon.textContent = '↓';
+  }
+}
+
+function renderTrends(trends, containerId) {
+  const cid = containerId || 'trends-container';
+  document.getElementById(cid).innerHTML = trends.map((t) => {
+    const key = 'trend_' + Math.random().toString(36).slice(2);
+    window._trendMap = window._trendMap || {};
+    window._trendMap[key] = t;
+    return `
+    <div class="trend-item">
+      <div class="trend-item-header">
+        <div class="trend-meta">
+          <div class="trend-name">${escHtml(t.name)} <span style="font-size:11px;color:var(--muted);font-weight:400;">${escHtml(t.type)}</span></div>
+          <div class="trend-why">${escHtml(t.why)}</div>
+        </div>
+        <div class="heat-badge">${t.heat}</div>
+      </div>
+      <button class="btn-use-trend" onclick="useTrend('${key}')">→ 用这个热点生成内容</button>
+    </div>`;
+  }).join('');
+}
+
+function useTrend(key) {
+  const trend = (window._trendMap || {})[key];
+  if (!trend) return;
+  prefillData = trend.prefill || {};
+  showTab('generate');
+  // Find matching type card and select it
+  selectTypeByName(trend.content_type || 'trending_song');
+}
+
+function selectTypeByName(typeName) {
+  currentType = typeName;
+  const cfg = TYPES[typeName];
+  if (!cfg) return;
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('form-title').textContent = cfg.label;
+  buildForm(cfg);
+  show('step-form'); hide('step-type'); hide('step-output');
+}
+
+// ─── Generator ───
+function selectType(type, el) {
+  currentType = type;
+  prefillData = null;
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const cfg = TYPES[type];
+  document.getElementById('form-title').textContent = cfg.label;
+  buildForm(cfg);
+  show('step-form'); hide('step-type'); hide('step-output');
+}
+
+function buildForm(cfg) {
+  const notice = document.getElementById('prefill-notice');
+  notice.style.display = prefillData && Object.keys(prefillData).length ? '' : 'none';
+  document.getElementById('form-fields').innerHTML =
+    cfg.fields.map(f => buildField(f, prefillData)).join('') + '<div style="height:8px;"></div>';
+}
+
+function buildField(f, pre) {
+  const val = pre && pre[f.id] ? escHtml(pre[f.id]) : '';
+  if (f.type === 'textarea') {
+    return `<div class="field"><label>${f.label}</label><textarea id="f-${f.id}" placeholder="${f.placeholder}">${val}</textarea></div>`;
+  } else if (f.type === 'select') {
+    return `<div class="field"><label>${f.label}</label><select id="f-${f.id}">${f.options.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+  } else {
+    return `<div class="field"><label>${f.label}</label><input type="text" id="f-${f.id}" placeholder="${f.placeholder}" value="${val}"></div>`;
+  }
+}
+
+function backToTypes() {
+  prefillData = null;
+  show('step-type'); hide('step-form'); hide('step-output');
+}
+function backToForm() {
+  show('step-form'); hide('step-output');
+}
+
+async function generateContent() {
+  const cfg = TYPES[currentType];
+  const inputs = cfg.fields.map(f => {
+    const el = document.getElementById('f-' + f.id);
+    return `- ${f.label}：${el ? (el.value.trim() || '（未填写）') : '（未填写）'}`;
+  }).join('\n');
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ AI 生成中...';
+  show('step-output'); hide('step-form');
+  document.getElementById('output-container').innerHTML = `
+    <div class="output-card"><div class="loading-state"><div class="spinner"></div><div>AI 正在按躺平风格生成内容...</div></div></div>`;
+
+  const prompt = `${BRAND}
+
+任务：${cfg.extra}
+
+员工提供的信息：
+${inputs}
+
+请严格按以下格式输出（保留===标记）：
+
+===CAPTION===
+（完整中文帖子正文。有力钩子句开场、情感共鸣正文、互动问题、预约CTA。换行分段。200-350字。）
+
+===HASHTAGS===
+（15-20个标签，中英混合，适合马来西亚受众，空格分隔。必须含：#tangping #kualalumpur #malaysia #night）
+
+===KLING===
+（可灵AI文生视频提示词，英文，50-80字，描述画面视觉/色调/氛围/镜头。地下丛林音乐公园美学：dim lighting, colorful stage lights, intimate live music venue。）
+
+===JIMENG===
+（即梦AI文生图提示词，中文，60-80字，描述封面图场景/风格/色调/构图，有躺平氛围感，不要求图内有文字。）
+
+===TIP===
+（给员工的发布建议，1-2句，最佳发布时间或配合建议。）`;
+
+  try {
+    const result = await window.cowork.askClaude(prompt, []);
+    let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
+    renderOutput(raw);
+  } catch (err) {
+    document.getElementById('output-container').innerHTML = `
+      <div class="output-card"><div class="empty-state"><div class="empty-icon">⚠️</div><div>生成失败，请重试</div><div style="margin-top:6px;font-size:12px;">${err.message||''}</div></div></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ AI 生成内容';
+  }
+}
+
+function renderOutput(raw) {
+  const get = tag => {
+    const m = raw.match(new RegExp(`===\\s*${tag}\\s*===([\\s\\S]*?)(?====|$)`));
+    return m ? m[1].trim() : '';
+  };
+  const blocks = [
+    { label: '📝 正文文案', content: get('CAPTION'), code: false },
+    { label: '# 话题标签', content: get('HASHTAGS'), code: false },
+    { label: '🎬 可灵AI提示词', content: get('KLING'), code: true },
+    { label: '🖼️ 即梦AI提示词', content: get('JIMENG'), code: true },
+  ].filter(b => b.content);
+
+  const tip = get('TIP');
+  document.getElementById('output-container').innerHTML =
+    `<div class="output-card">${blocks.map(renderBlock).join('')}</div>` +
+    (tip ? `<div class="tip-box">💡 <strong>发布建议：</strong>${escHtml(tip)}</div>` : '');
+}
+
+function renderBlock({ label, content, code }) {
+  const id = 'ob' + Math.random().toString(36).slice(2);
+  return `
+    <div class="output-block">
+      <div class="output-label-row">
+        <div class="output-label-text">${label}</div>
+        <button class="btn-copy" onclick="doCopy('${id}',this)">复制</button>
+      </div>
+      <div class="${code ? 'output-code' : 'output-text'}" id="${id}">${escHtml(content)}</div>
+    </div>`;
+}
+
+function doCopy(id, btn) {
+  const text = document.getElementById(id).innerText;
+  const ok = () => { btn.textContent='✓ 已复制'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='复制'; btn.classList.remove('copied'); },2000); };
+  navigator.clipboard.writeText(text).then(ok).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok();
+  });
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+// ════════════════════════════════════════════════
+// ─── 点歌系统 ───────────────────────────────────
+// ════════════════════════════════════════════════
+
+const TP_DATA = {"schedule":{"2026-05-01":{"singers":["Kopi","PDF","Zqames"],"songs":[{"t":"Shu Qing Ge","s":["Kopi"],"k":"E","set":"Set 1"},{"t":"Na Li Dou Shi Ni","s":["Kopi"],"k":"F","set":"Set 1"},{"t":"Wei Yi","s":["PDF"],"k":"C","set":"Set 1"},{"t":"Ye Ren","s":["PDF"],"k":"F","set":"Set 1"},{"t":"Circle Of Life (PGM)","s":["Zqames"],"k":"Bb","set":"Set 1"},{"t":"Ni Guang","s":["Zqames"],"k":"E","set":"Set 1"},{"t":"Cha Bu Duo De Gu Niang (PGM)","s":["PDF"],"k":"Ab","set":"Set 2"},{"t":"Shun","s":["Kopi"],"k":"G#","set":"Set 2"},{"t":"Tian Tian","s":["Kopi"],"k":"B","set":"Set 2"},{"t":"Si Le Dou Yao Ai","s":["Zqames"],"k":"Dm","set":"Set 2"},{"t":"Locked Out Of Heaven","s":["Zqames"],"k":"C","set":"Set 2"},{"t":"Ai Shang Ni Suan Wo Jian","s":["Kopi"],"k":"","set":"Set 3"},{"t":"Uptown Funk","s":["Zqames"],"k":"C","set":"Set 3"},{"t":"Shan Hai","s":["Kopi"],"k":"E","set":"Set 3"},{"t":"Qi Lin (PGM)","s":["PDF"],"k":"F#m","set":"Set 3"},{"t":"Bang Bang","s":["Zqames"],"k":"Db","set":"Set 3"},{"t":"Tai Yang Zhi Zi (PGM)","s":["PDF"],"k":"G","set":"Set 3"},{"t":"Wo De Xin Yi (PGM)","s":["PDF"],"k":"","set":"Set 4"},{"t":"Ai Wo Bie Zo","s":["Kopi"],"k":"B","set":"Set 4"},{"t":"Lei Hai","s":["Zqames"],"k":"A","set":"Set 4"},{"t":"Ai Cuo","s":["Kopi"],"k":"B","set":"Set 4"},{"t":"Yi Lu Xiang Bei","s":["PDF"],"k":"G","set":"Set 4"},{"t":"Wang Fei","s":["Zqames"],"k":"Em","set":"Set 4"}]},"2026-05-02":{"singers":["Bird","Jyang","VV"],"songs":[{"t":"Xian Hua","s":["Bird"],"k":"Eb","set":"Set 1"},{"t":"Yi Lu Xiang Bei","s":["Bird"],"k":"D","set":"Set 1"},{"t":"Sheng Qi Bai Ma (PGM)","s":["VV"],"k":"F","set":"Set 1"},{"t":"Duo Yuan Dou Yao Zai Yi Qi","s":["VV"],"k":"Eb - E","set":"Set 1"},{"t":"Ting Ma Ma De Hua (PGM)","s":["Jyang"],"k":"Bb","set":"Set 1"},{"t":"Bu Xiang Shang Ban (PGM)","s":["Jyang"],"k":"A","set":"Set 1"},{"t":"Hei Se Liu Ding (PGM)","s":["Jyang"],"k":"Ab","set":"Set 2"},{"t":"Tian Hou","s":["Bird"],"k":"A","set":"Set 2"},{"t":"Ting Shuo Ni","s":["VV"],"k":"C","set":"Set 2"},{"t":"Kan Zhe Wo De Yan Jing Shuo","s":["Jyang"],"k":"A","set":"Set 2"},{"t":"Tu Ran Hao Xiang Ni","s":["Bird"],"k":"C#","set":"Set 2"},{"t":"11 (PGM)","s":["VV"],"k":"A","set":"Set 2"},{"t":"Sheng Xia Guang Nian","s":["Bird"],"k":"F#m","set":"Set 3"},{"t":"Wu Niang (PGM)","s":["VV"],"k":"E","set":"Set 3"},{"t":"Qi Tian Da Sheng (PGM)","s":["Jyang"],"k":"Ebm","set":"Set 3"},{"t":"San Tian San Ye","s":["VV"],"k":"G","set":"Set 3"},{"t":"Shuai dao fen shou","s":["Jyang"],"k":"Bb","set":"Set 3"},{"t":"Tai Yang Zhi Zi","s":["Bird"],"k":"Cm","set":"Set 3"},{"t":"Tian Kong Mei You Ji Xian","s":["VV"],"k":"B","set":"Set 4"},{"t":"Ai Cuo","s":["Bird"],"k":"B","set":"Set 4"},{"t":"Qing Tian","s":["Jyang"],"k":"F","set":"Set 4"},{"t":"Lei Hai","s":["VV"],"k":"D - Eb","set":"Set 4"},{"t":"Dao Xiang (Rock)","s":["Bird"],"k":"A","set":"Set 4"},{"t":"Li Kai Di Qiu Biao Mian (PGM)","s":["Jyang"],"k":"C","set":"Set 4"}]},"2026-05-03":{"singers":["Hoyee","Mindy"],"songs":[{"t":"Yi Bai Zhong Sheng Huo (PGM)","s":["Mindy"],"k":"B","set":"Set 1"},{"t":"Eyes Nose Lips (PGM)","s":["Hoyee"],"k":"Eb","set":"Set 1"},{"t":"Dian Qi Jiao Jian Ai (PGM)","s":["Mindy"],"k":"G","set":"Set 1"},{"t":"Zhi You (PGM)","s":["Mindy"],"k":"E","set":"Set 1"},{"t":"Dan Xiao Gui (PGM)","s":["Hoyee"],"k":"G","set":"Set 1"},{"t":"Ni Guang (PGM)","s":["Hoyee"],"k":"A","set":"Set 1"},{"t":"Ai Qing Zen Me Le Ma (PGM)","s":["Mindy"],"k":"C-Db","set":"Set 2"},{"t":"Xiao Ban (PGM)","s":["Mindy"],"k":"G","set":"Set 2"},{"t":"All I Ask (PGM)","s":["Mindy"],"k":"Eb-E","set":"Set 2"},{"t":"Li Li An (PGM)","s":["Hoyee"],"k":"G","set":"Set 2"},{"t":"Ji Fen Zhi Ji (PGM)","s":["Hoyee"],"k":"F","set":"Set 2"},{"t":"Ni Gan Bu Gan (PGM)","s":["Hoyee"],"k":"F#","set":"Set 2"},{"t":"Wo Ai Ni","s":["Mindy"],"k":"G","set":"Set 3"},{"t":"Ai Ai Ai (PGM)","s":["Hoyee"],"k":"E","set":"Set 3"},{"t":"Dao Xiang Rock (Sprite version)","s":["Mindy"],"k":"D","set":"Set 3"},{"t":"Fly Away (PGM)","s":["Hoyee"],"k":"C - Eb","set":"Set 3"},{"t":"Dance Monkey (PGM)","s":["Mindy"],"k":"F#m","set":"Set 3"},{"t":"Di Yi Tian (PGM)","s":["Hoyee","Mindy"],"k":"C","set":"Set 3"},{"t":"Last Dance (PGM)","s":["Mindy"],"k":"D-Eb","set":"Set 4"},{"t":"Ye Zi (PGM)","s":["Hoyee"],"k":"C","set":"Set 4"},{"t":"Lei Hai","s":["Mindy"],"k":"D","set":"Set 4"},{"t":"Wo Men De Ai (PGM)","s":["Hoyee"],"k":"Fmin","set":"Set 4"},{"t":"Ni Bu Shi Zhen Zheng De Kuai Le","s":["Mindy"],"k":"A","set":"Set 4"},{"t":"Xiao Qing Ge *V2 (PGM)","s":["Hoyee"],"k":"E","set":"Set 4"}]},"2026-05-04":{"singers":["Mac","Mini"],"songs":[{"t":"Bird Of Feather","s":["Mac"],"k":"Ab","set":"Set 1"},{"t":"Mo Te","s":["Mac"],"k":"Db","set":"Set 1"},{"t":"I'm Yours","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Bie Zhao Wo Ma Fan","s":["Mini"],"k":"C","set":"Set 1"},{"t":"Wu Mei Zi Jiang","s":["Mac"],"k":"Ab","set":"Set 1"},{"t":"Wo De Mi Mi","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Dai Wo Qu Zhao Ye Sheng Huo","s":["Mac","Mini"],"k":"C#","set":"Set 2"},{"t":"Shun","s":["Mac"],"k":"Ab","set":"Set 2"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Mini"],"k":"Eb","set":"Set 2"},{"t":"Yin Wei Ai Qing","s":["Mac","Mini"],"k":"F","set":"Set 2"},{"t":"Ji Mo Ji Mo Jiu Hao","s":["Mini"],"k":"Eb","set":"Set 2"},{"t":"Lose Control","s":["Mac"],"k":"F#","set":"Set 2"},{"t":"Gei Ni Yi Ping Mo Fa Yao Shui","s":["Mac","Mini"],"k":"Ori","set":"Set 3"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Qi Mei Di","s":["Mac"],"k":"Fm","set":"Set 3"},{"t":"Yang Guang Zai Nan","s":["Mini"],"k":"G","set":"Set 3"},{"t":"Shan Hai","s":["Mac"],"k":"Bm","set":"Set 3"},{"t":"Ai Ren Cuo Guo","s":["Mac","Mini"],"k":"Ori","set":"Set 3"},{"t":"Wo Ai Ni","s":["Mac"],"k":"Bbm","set":"Set 4"},{"t":"Dang Ni","s":["Mini"],"k":"Ori","set":"Set 4"},{"t":"Pu Tong Peng You","s":["Mac"],"k":"F","set":"Set 4"},{"t":"Ge Qian","s":["Mini"],"k":"F#","set":"Set 4"},{"t":"Ai Wo Bie Zou","s":["Mac"],"k":"C","set":"Set 4"},{"t":"Lei Hai","s":["Mini"],"k":"D","set":"Set 4"}]},"2026-05-05":{"singers":["Coen","Mini"],"songs":[{"t":"Pu Tong Peng You (PGM)","s":["Coen"],"k":"F","set":"Set 1"},{"t":"Te Bie De Ren","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Xia Tian De Feng","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Xie Yi Shou Ge","s":["Mini"],"k":"Eb","set":"Set 1"},{"t":"So Easy","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Kou (PGM)","s":["Mini"],"k":"F#","set":"Set 1"},{"t":"Yi Nian (PGM)","s":["Coen","Mini"],"k":"Dm","set":"Set 2"},{"t":"Jin Ji Lian Luo Ren (PGM)","s":["Coen"],"k":"G - Ab","set":"Set 2"},{"t":"PS Wo Ai Ni","s":["Mini"],"k":"G","set":"Set 2"},{"t":"Yin Wei Ai Qing","s":["Coen","Mini"],"k":"F","set":"Set 2"},{"t":"Ai Jiu Jian Ren Xin (PGM)","s":["Coen"],"k":"G#","set":"Set 2"},{"t":"Tian Xia You Qing Ren","s":["Coen","Mini"],"k":"A","set":"Set 2"},{"t":"Birds Of A Feather","s":["Coen"],"k":"Ab","set":"Set 3"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Bu Chao Bu Yong Hua Qian","s":["Coen"],"k":"C","set":"Set 3"},{"t":"Ai Ren Cuo Guo","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"San Tian San Ye","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Watermelon Sugar","s":["Coen"],"k":"C","set":"Set 4"},{"t":"Wo Hao Xiang Ni","s":["Mini"],"k":"Plus 3","set":"Set 4"},{"t":"Ni Man Wo Man","s":["Coen"],"k":"A","set":"Set 4"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Mini"],"k":"Eb","set":"Set 4"},{"t":"Dao Di Fa Shen Guo Shen Me Shi","s":["Coen"],"k":"B","set":"Set 4"},{"t":"Di Yi Tian (PGM)","s":["Mini"],"k":"C","set":"Set 4"}]},"2026-05-06":{"singers":["Alex","June"],"songs":[{"t":"If You (PGM)","s":["Alex"],"k":"C","set":"Set 1"},{"t":"Shun","s":["Alex"],"k":"Ab","set":"Set 1"},{"t":"Fei Ji Chang De 10:30 (PGM)","s":["June"],"k":"Ab","set":"Set 1"},{"t":"Te Bie De Ren","s":["June"],"k":"D","set":"Set 1"},{"t":"Qu Bei Ji Wang Ji Ni","s":["Alex"],"k":"G","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Kou (PGM)","s":["June"],"k":"F#","set":"Set 1"},{"t":"R&B All Night (PGM)","s":["June"],"k":"D","set":"Set 2"},{"t":"Golden Hour (PGM)","s":["Alex"],"k":"E","set":"Set 2"},{"t":"Xing Fu Zai Ge Chang (PGM)","s":["June"],"k":"A","set":"Set 2"},{"t":"Yi Ban Yi Ban","s":["Alex"],"k":"C#","set":"Set 2"},{"t":"Shui Xing Ji (PGM)","s":["June"],"k":"C","set":"Set 2"},{"t":"Hai Yu Ni (PGM)","s":["Alex"],"k":"E","set":"Set 2"},{"t":"Lonely Dance (PGM)","s":["Alex"],"k":"C#m","set":"Set 3"},{"t":"Jie Jie (PGM)","s":["June"],"k":"B","set":"Set 3"},{"t":"Uptown Funk (PGM)","s":["Alex"],"k":"Dm","set":"Set 3"},{"t":"San Tian San Ye (PGM)","s":["June"],"k":"F","set":"Set 3"},{"t":"Qi Lin (PGM)","s":["Alex"],"k":"F#m","set":"Set 3"},{"t":"Di Yi Tian (PGM)","s":["June"],"k":"C","set":"Set 3"},{"t":"Yi Lu Xiang Bei (PGM)","s":["Alex"],"k":"D","set":"Set 4"},{"t":"Ni Yao De Ai (PGM)","s":["June"],"k":"F","set":"Set 4"},{"t":"Zhuan Shu Tian Shi (PGM)","s":["Alex"],"k":"B","set":"Set 4"},{"t":"Zhi You (PGM)","s":["June"],"k":"E","set":"Set 4"},{"t":"Wo Hao Xiang Ni (PGM)","s":["Alex"],"k":"Ab","set":"Set 4"},{"t":"Long Juan Feng (PGM)","s":["June"],"k":"Db","set":"Set 4"}]},"2026-05-07":{"singers":["Hoyee","PDF","Sean"],"songs":[{"t":"Zi Yi Wei (PGM)","s":["Hoyee","Sean"],"k":"G","set":"Set 1"},{"t":"Jin Lang Man Chao Wen Xin (PGM)","s":["Sean"],"k":"Db","set":"Set 1"},{"t":"Guai Tian Qi (PGM)","s":["PDF","Sean"],"k":"A","set":"Set 1"},{"t":"If You (PGM)","s":["PDF"],"k":"B","set":"Set 1"},{"t":"Ai Wo De Shi Hou (PGM)","s":["Hoyee","Sean"],"k":"F#","set":"Set 1"},{"t":"Ai Ai Ai (PGM)","s":["Hoyee"],"k":"E","set":"Set 1"},{"t":"11 (PGM)","s":["PDF"],"k":"G","set":"Set 2"},{"t":"Zi Zi Ju Ju (PGM)","s":["Hoyee","Sean"],"k":"G - D","set":"Set 2"},{"t":"Yong Bei Ji Chang Qing Ge","s":["Sean"],"k":"Db","set":"Set 2"},{"t":"Ye Ren","s":["PDF"],"k":"F","set":"Set 2"},{"t":"Zhu Yu (PGM)","s":["Hoyee"],"k":"F","set":"Set 2"},{"t":"Zai Jia Na Gong He Guo Li Hun (PGM)","s":["Hoyee","Sean"],"k":"G","set":"Set 2"},{"t":"Nv Hai (PGM)","s":["Sean"],"k":"C#","set":"Set 3"},{"t":"Wo De Xin Yi (PGM)","s":["PDF"],"k":"Ori","set":"Set 3"},{"t":"Fly Away (PGM)","s":["Hoyee"],"k":"Eb","set":"Set 3"},{"t":"Ai Ren Cuo Guo (PGM)","s":["PDF","Hoyee","Sean"],"k":"Db","set":"Set 3"},{"t":"Gurenge (PGM)","s":["Hoyee"],"k":"G","set":"Set 3"},{"t":"Tai Yang Zhi Zi (PGM)","s":["PDF"],"k":"G","set":"Set 3"},{"t":"Xian Hua (PGM)","s":["PDF"],"k":"G","set":"Set 4"},{"t":"Xiao Qing Ge \"V2\" (PGM)","s":["Hoyee"],"k":"E","set":"Set 4"},{"t":"Shuo huang","s":["Sean"],"k":"Bb","set":"Set 4"},{"t":"Ni Yao De Ai","s":["PDF"],"k":"F","set":"Set 4"},{"t":"Wo Men De Ai (PGM)","s":["Hoyee"],"k":"Fmin","set":"Set 4"},{"t":"Wo Hai Shi Ai Zhe Ni (PGM)","s":["Sean"],"k":"B","set":"Set 4"}]},"2026-05-08":{"singers":["Jyang","Mindy","Vans","Zqames"],"songs":[{"t":"Circle Of Life (PGM)","s":["Zqames"],"k":"Bb","set":"Set 1"},{"t":"Ni Guang","s":["Zqames"],"k":"E","set":"Set 1"},{"t":"Zhi You (PGM)","s":["Mindy"],"k":"F","set":"Set 1"},{"t":"Ru Guo Ai Wang Le (PGM)","s":["Jyang","Mindy"],"k":"C","set":"Set 1"},{"t":"Ye Ren","s":["Vans"],"k":"D","set":"Set 1"},{"t":"Wu Kong (PGM)","s":["Vans"],"k":"Cm","set":"Set 1"},{"t":"Ting Ma Ma De Hua (PGM)","s":["Jyang"],"k":"Bb","set":"Set 2"},{"t":"Yue Ya Wan","s":["Mindy"],"k":"D","set":"Set 2"},{"t":"Yi Nian (PGM)","s":["Jyang","Mindy"],"k":"C#m","set":"Set 2"},{"t":"Ai Cuo","s":["Vans"],"k":"C","set":"Set 2"},{"t":"Si Le Dou Yao Ai","s":["Zqames"],"k":"Dm","set":"Set 2"},{"t":"Locked Out Of Heaven","s":["Zqames"],"k":"C","set":"Set 2"},{"t":"Xian Hua (PGM)","s":["Vans"],"k":"Eb","set":"Set 3"},{"t":"Uptown Funk (PGM)","s":["Zqames"],"k":"Cm","set":"Set 3"},{"t":"Dance Monkey (PGM)","s":["Mindy"],"k":"F#m","set":"Set 3"},{"t":"Tian Hei Qing Bi Yan (PGM)","s":["Jyang"],"k":"Bb","set":"Set 3"},{"t":"Qi Tian Da Sheng","s":["Jyang"],"k":"Ebm","set":"Set 3"},{"t":"Li Kai Di Qiu Biao Mian","s":["Vans"],"k":"D","set":"Set 3"},{"t":"Shu Le Ni Ying Le Shi Jie You Ru He","s":["Vans"],"k":"Eb","set":"Set 4"},{"t":"Ai Xiao De Yan Jing","s":["Mindy"],"k":"F#","set":"Set 4"},{"t":"Zhi Shi Tai Ai Ni (PGM)","s":["Jyang"],"k":"Bb","set":"Set 4"},{"t":"Lei Hai","s":["Zqames"],"k":"A","set":"Set 4"},{"t":"Ai Hen Jian Dan","s":["Vans"],"k":"C","set":"Set 4"},{"t":"Zi You","s":["Jyang"],"k":"F","set":"Set 4"}]},"2026-05-09":{"singers":["Bird","Jyang","VV"],"songs":[{"t":"Yi Lu Xiang Bei","s":["Bird"],"k":"D","set":"Set 1"},{"t":"Tian Hou","s":["Bird"],"k":"A","set":"Set 1"},{"t":"Ye Ren","s":["VV"],"k":"Ab","set":"Set 1"},{"t":"Duo Yuan Dou Yao Zai Yi Qi","s":["VV"],"k":"Eb - E","set":"Set 1"},{"t":"Shou Fang Kai (PGM)","s":["Jyang"],"k":"B","set":"Set 1"},{"t":"Li Bai ( PGM)","s":["Jyang"],"k":"C","set":"Set 1"},{"t":"Ting Ma Ma De Hua (PGM)","s":["Jyang"],"k":"Bb","set":"Set 2"},{"t":"Ting Shuo Ni","s":["VV"],"k":"C","set":"Set 2"},{"t":"Kan Zhe Wo De Yan Jing Shuo","s":["Bird"],"k":"A","set":"Set 2"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Jyang"],"k":"Ab","set":"Set 2"},{"t":"11 (PGM)","s":["VV"],"k":"A","set":"Set 2"},{"t":"Sheng Xia Guang Nian (PGM)","s":["Bird"],"k":"F#m","set":"Set 2"},{"t":"Xian Hua","s":["Bird"],"k":"Eb","set":"Set 3"},{"t":"Ri Bu Luo","s":["VV"],"k":"C#","set":"Set 3"},{"t":"Nv Hai (PGM)","s":["Jyang"],"k":"C#","set":"Set 3"},{"t":"Wu Niang (PGM)","s":["VV"],"k":"E","set":"Set 3"},{"t":"Shuang Jie Gun (PGM)","s":["Jyang"],"k":"A","set":"Set 3"},{"t":"Tai Yang Zhi Zi (PGM)","s":["Bird"],"k":"Cm","set":"Set 3"},{"t":"Lang Zi Hui Tou (PGM)","s":["Jyang"],"k":"C","set":"Set 4"},{"t":"Ting Jian Xia Yu De Sheng Yin","s":["VV"],"k":"Ab","set":"Set 4"},{"t":"Ai Cuo","s":["Bird"],"k":"B","set":"Set 4"},{"t":"Lei Hai","s":["VV"],"k":"D - Eb","set":"Set 4"},{"t":"Dao Xiang (Rock)","s":["Bird"],"k":"A","set":"Set 4"},{"t":"Li Kai Di Qiu Biao Mian (PGM)","s":["Jyang"],"k":"C","set":"Set 4"}]},"2026-05-10":{"singers":["Bryan","Mindy"],"songs":[{"t":"Ai Qing Zen Me Le Ma (PGM)","s":["Mindy"],"k":"C-Db","set":"Set 1"},{"t":"Dian Qi Jiao Jian Ai (PGM)","s":["Mindy"],"k":"G","set":"Set 1"},{"t":"Ni Bu Zhi Dao De Shi","s":["Bryan"],"k":"C#","set":"Set 1"},{"t":"Tian Tian","s":["Bryan"],"k":"C-C#","set":"Set 1"},{"t":"All I ask (PGM)","s":["Mindy"],"k":"Eb-E","set":"Set 1"},{"t":"Shu Le Ni Ying Le Shi Jie You Ru He","s":["Bryan"],"k":"E","set":"Set 1"},{"t":"Yu Ai","s":["Bryan"],"k":"B","set":"Set 2"},{"t":"Reflection (PGM)","s":["Mindy"],"k":"E","set":"Set 2"},{"t":"Ji Mo Xian Shen","s":["Bryan"],"k":"Ab","set":"Set 2"},{"t":"Zhi Shao Hai You Ni","s":["Mindy"],"k":"E","set":"Set 2"},{"t":"Versace On The Floor","s":["Mindy"],"k":"C#","set":"Set 2"},{"t":"Long Juan Feng","s":["Bryan"],"k":"A","set":"Set 2"},{"t":"Xian Hua","s":["Mindy"],"k":"G","set":"Set 3"},{"t":"Shan Hai","s":["Bryan"],"k":"Bm","set":"Set 3"},{"t":"Dao Xiang Rock (Sprite version)","s":["Mindy"],"k":"D","set":"Set 3"},{"t":"Shang Xin De Ren Bie Ting Man Ge","s":["Bryan"],"k":"Am","set":"Set 3"},{"t":"Dance Monkey (PGM)","s":["Mindy"],"k":"F#m","set":"Set 3"},{"t":"Li Bai","s":["Bryan"],"k":"C","set":"Set 3"},{"t":"Ai Cuo","s":["Bryan"],"k":"C#-Eb-E","set":"Set 4"},{"t":"Hei Se You Mo (PGM)","s":["Mindy"],"k":"Db","set":"Set 4"},{"t":"Ru Guo Ke Yi","s":["Bryan"],"k":"Eb","set":"Set 4"},{"t":"Zhi You (PGM)","s":["Mindy"],"k":"F-G","set":"Set 4"},{"t":"Qing Tian","s":["Bryan"],"k":"G","set":"Set 4"},{"t":"Ai Xiao De Yan Jing (PGM)","s":["Mindy"],"k":"F#","set":"Set 4"}]},"2026-05-11":{"singers":["Jess","Mini"],"songs":[{"t":"Xia Tian De Feng","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Jian Dan Ai","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Ko","s":["Jess"],"k":"G","set":"Set 1"},{"t":"Duo Yuan Dou Yao Zai Yi Qi","s":["Jess"],"k":"D - Eb","set":"Set 1"},{"t":"Yue Ya Wan","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Ni Guang","s":["Jess"],"k":"A - Bb","set":"Set 1"},{"t":"Shi Lian Wu Zui","s":["Jess"],"k":"G","set":"Set 2"},{"t":"Yu Ai","s":["Mini"],"k":"C#m","set":"Set 2"},{"t":"P.S. Wo Ai Ni","s":["Jess"],"k":"F#","set":"Set 2"},{"t":"Gei Wo Yi Ge Li You Wang Ji","s":["Mini"],"k":"Ori","set":"Set 2"},{"t":"Xin Fu Zai Ge Chang","s":["Jess"],"k":"A","set":"Set 2"},{"t":"Wo Huai Nian De","s":["Mini"],"k":"Ori","set":"Set 2"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Qi Mei Di","s":["Jess"],"k":"C","set":"Set 3"},{"t":"Yang Guang Zai Nan","s":["Mini"],"k":"G","set":"Set 3"},{"t":"Xi Huan Ni","s":["Jess"],"k":"E - F#","set":"Set 3"},{"t":"Di Yi Tian (PGM)","s":["Jess"],"k":"C","set":"Set 3"},{"t":"San Tian San Ye","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Lei Hai","s":["Mini"],"k":"D","set":"Set 4"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Jess"],"k":"Eb","set":"Set 4"},{"t":"Kai Shi Dong Le","s":["Mini"],"k":"B","set":"Set 4"},{"t":"Ren De Zhe Yi Shen","s":["Jess"],"k":"Eb - F","set":"Set 4"},{"t":"Wo Yao Kuai Le","s":["Mini"],"k":"G","set":"Set 4"},{"t":"Wo Hao Xiang Ni","s":["Jess"],"k":"C","set":"Set 4"}]},"2026-05-12":{"singers":["Coen","Mini"],"songs":[{"t":"Jin Ji Lian Luo Ren","s":["Coen"],"k":"G - Ab","set":"Set 1"},{"t":"Te Bie De Ren","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Xia Tian De Feng","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Xie Yi Shou Ge","s":["Mini"],"k":"Eb","set":"Set 1"},{"t":"Ai Jiu Jian Ren Xin (PGM)","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Kou (PGM)","s":["Mini"],"k":"F#","set":"Set 1"},{"t":"Tian Xia You Qing Ren","s":["Coen","Mini"],"k":"A","set":"Set 2"},{"t":"Dian Qi Jiao Jian Ai","s":["Coen"],"k":"C#","set":"Set 2"},{"t":"PS Wo Ai Ni","s":["Mini"],"k":"G","set":"Set 2"},{"t":"Yi Nian (PGM)","s":["Coen","Mini"],"k":"Dm","set":"Set 2"},{"t":"Hai Yu Ni (PGM)","s":["Mini","Coen"],"k":"Ab","set":"Set 2"},{"t":"Qi Mei Di","s":["Coen"],"k":"G#","set":"Set 2"},{"t":"Watermelon Sugar","s":["Coen"],"k":"C","set":"Set 3"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Birds Of A Feather","s":["Coen"],"k":"Ab","set":"Set 3"},{"t":"Ai Ren Cuo Guo","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Bu Chao Bu Yong Hua Qian","s":["Coen"],"k":"C","set":"Set 3"},{"t":"San Tian San Ye","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Pu Tong Peng You (PGM)","s":["Coen"],"k":"F","set":"Set 4"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Mini"],"k":"Eb","set":"Set 4"},{"t":"Dao Di Fa Shen Guo Shen Me Shi","s":["Coen"],"k":"B","set":"Set 4"},{"t":"Lei Hai","s":["Mini"],"k":"D","set":"Set 4"},{"t":"Ni Man Wo Man","s":["Coen"],"k":"A","set":"Set 4"},{"t":"Tu Ran Hao Xiang Ni","s":["Mini"],"k":"Ab","set":"Set 4"}]}},"singers":{"Molly":["Ai Cuo","Ai De Chu Ti Yan","Ai De Jiu Shi Ni","Ai Ni","Ai Ren Cuo Guo","Ai Wo Bie Zou","Ai Ya Ai Ya","Ai Yao Tan Dang Dang","Dai Wo Zou","Dang Ni","Dao Xiang","Dui Deng Guan Xi","Gei Wo Yi Ge Li You Wang Ji","Guang Nian Zhi Wai","Hou Lai","Ni Yao De Ai","Piao Xiang Bei Fang","Qi Mei Di","Ri Bu Luo","Ru Yuan","Someone You Loved","Tiao Lou Ji","Ting Jian Xia Yu De Sheng Yin","Wo Huai Nian De","Wo Men De Ai","Wo Men De Ge","Yue Ya Wan","Zombie"],"Jack":["Ai Cuo","Ai Hen Jian Dan","Ai Ru Chao Shui","Ai Wo Hai Shi Ta","Bei Pan","Bie Wen Hen Ke Pa","Bu Chao Bu Yong Hua Qian","Chao Cao","Dui Deng Guan Xi","Hai Kuo Tian Kong","Hon Ri","Hong Ri","Mei Na Me Jian Dan","Piao Xiang Bei Fang","Pu Tong Peng You","Rang Wo Liu Zai Ni Sheng Bian","Sui Yue Ru Ge","Te Bie De Ren","Tiao Lou Ji","Tong Hua","Wo Men","Xiang Ni De Ye","Xiang Tai Duo","Xiu Lian Ai Qing","Yi Hou Bie Zuo Peng You","Yi Lu Xiang Bei","Yi Sheng Zhong Zui Ai","You Yi Chang Chun","Zhuan Shu Tian Shi"],"Hoyee":["A La Si Jia Hai Wan","A La Si Jia Hai Wan (PGM)","Ai Ai Ai","Ai Ai Ai (PGM)","Ai Cuo","Ai Ren Cuo Guo","Ai Ren Cuo Guo (PGM)","Ai Wo De Shi Hou (PGM)","Bang Bang","Dan Xiao Gui (PGM)","Di Yi Tian","Di Yi Tian (PGM)","Eight (PGM)","Eyes Nose Lips (PGM)","First Love (PGM)","Fly Away (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gei Wo Yi Ge Li You Wang Ji","Guo Le Ji Tian (PGM)","Gurenge (PGM)","Hao Bu Rong Yi","Hao Bu Rong Yi (PGM)","Ji Fen Zhi Ji","Ji Fen Zhi Ji (PGM)","Ji Mo Ji Mo Jiu Hao","Ji Mo Ji Mo Jiu Hao (PGM)","Ke Bu Le (PGM)","Last Dance (PGM)","Lei Hai","Li Li An (PGM)","Lian Ming Dai Xing (PGM)","Liu Xin Yu","Lv Guang (PGM)","Lydia (PGM)","Ni De Wei Xiao (PGM)","Ni Gan Bu Gan (PGM)","Ni Guang (PGM)","Ni Jiu Bu Yao Xiang Qi Wo","Ni Yao De Ai (PGM)","Qi Feng Le (PGM)","Ru Guo Ai Wang Le (PGM)","Ru Yan (PGM)","San Tian San Ye","Sheng Qi Bai Ma (PGM)","Shi Lian Wu Zui","Shi Luo Sha Zhou (PGM)","So Easy","Tou Qi (PGM)","Wo Bu Nan Guo","Wo Bu Nan Guo (PGM)","Wo Hao Xiang Ni","Wo Hao Xiang Ni (PGM)","Wo Huai Nian De","Wo Men De Ai (PGM)","Wo Yao Fei (PGM)","Wu Mian (PGM)","Wu Ren Zhi Xiao (PGM)","Xian Hua","Xiao Qing Ge","Xiao Qing Ge \"V2\" (PGM)","Xiao Qing Ge (PGM)","Xiao Qing Ge *V2 (PGM)","Xing Bu Liao Qing","Xing Chen Da Hai","Ye Zi (PGM)","Yong Gan (PGM)","Yong Qi (PGM)","You Yi Zhong Bei Shang (PGM)","Zai Jia Na Gong He Guo (PGM)","Zai Jia Na Gong He Guo Li Hun (PGM)","Zai Wo Nang Ye Bu Fu Qing Chun (PGM)","Zhen De Sha (PGM)","Zhu Yu (PGM)","Zi Yi Wei (PGM)","Zi You","Zi Zi Ju Ju (PGM)"],"Mac":["Ai Ren Cuo Guo","Ai Ren Cuo Guo (PGM)","Ai Wo Bie Zo","Ai Wo Bie Zou","Ai Wo Bie Zou (PGM)","Bird Of Feather","Dai Wo Qu Ye Sheng Huo","Dai Wo Qu Zhao Ye Shen Huo","Dai Wo Qu Zhao Ye Sheng Huo","Dao Xiang","Don't Look Back In Anger","Gei Ni Yi Ping Mo Fa Yao Shui","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gravity","Hao Bu Rong Yi","Hao Bu Rong Yi (PGM)","Hei Se Liu Ding","Hei Se Liu Ding (PGM)","Here With Me","Ji Fen Zhi Ji","Li Bai","Li Bai (PGM)","Lian Ren","Lose Control","Lover Boy","Mo Te","Nv Hai (PGM)","Pu Tong Peng You","Pu Tong Peng You (PGM)","Qi Mei Di","Qu Bei Ji Wang Ji Ni","Shan Hai","Shan Hai (PGM)","Shang Hai","Shape Of You","Shun","Slow Dancing In The Burning Room","Soft Spot","Wo Ai Ni","Wo Hai Nian Qing x2","Wu Mei Zi Jiang","Yin Wei Ai Qing","Zhong Yu Shuo Chu Ko","Zhong Yu Shuo Chu Ko (PGM)","Zu Gou"],"Zac":["A La Si Jia Hai Wan","Ai Hen Jian Dan","Ai Ren Cuo Guo","Dui Ni Ai Bu Wan","Fu Kua","Hai Kuo Tian Kong","Hu Ran Zhi Jian","Hui Se Gui Ji","Jiu Wang Le Ba","Kan Zhe Wo De Yan Jing Shuo","Lan Ni","Lang Zi Hui Tou","Li Kai Di Qiu Biao Mian","Lian Ai ING","Nan Ren KTV","Ni Man Wo Man","Qing Ren","Shui Xing Ji","Shuo Huang","Sui Yue Ru Ge","Tao Tai","Tiao Lou Ji","Xiang Zi You","You Xin Ren","Zhe Me Jin Na Me Yuan","Zhe Me Jing , Na Me Yuan","Zhong Ko Wei","Zi Ran Xin"],"VV":["11 (PGM)","Ai Ai Ai","Ai Cuo","Ai Ren Cuo Guo","Ai Ya Ai Ya","Ai Yao Tang Dang Dang","Bai Nian Gu Ji","Cao Jie Zhi","Dang Ni","Dao Shu","Dian Qi Jiao Jian Ai","Diao Le","Duo Yuan Do Yao Zai Yi Qi","Duo Yuan Do Yao Zaio Yi Qi","Duo Yuan Dou Yao Zai Yi Qi","Hon Qiang Wei Bai Mei Gui","Hu Er Jin Xia","Kai Men Jian Shan","Kai Men Jian Shan (PGM)","Kan Zhe Wo De Yan Jing Shuo","Lei Hai","Li Kai Di Qiu Biao Mian","Liang Liang","Long Juan Feng","Ni De Wei Xiao","Pao Mo","Ri Bu Luo","Ri Bu Luo (PGM)","Rolling In The Deep","Ru Guo Ke Yi","San Tian San Ye","Shan Bian","Sheng Qi Bai Ma (PGM)","Shi Lian Wu Zui","Tian Hou","Tian Kong Mei You Ji Xian","Ting Jian Xia Yu De Sheng Yin","Ting Shuo Ni","Ting shuo ni","Tui Hou","Wang Ji Yong Bao","Wei Ni Er Huo","Wo De Mi Mi","Wu Niang (PGM)","Xi Huan Ni","Yang Guang Zai Nan","Yang Guang Zai Nan (PGM)","Ye Ren","Ye ren","Yellow","Yi Lu Xiang Bei","Yi Wan Chi Bei Shang","Yi Wan Chi Bei Shang（Live）","Yu Ai","Yue Ya Wan","Yue Ya Wan (PGM)","Zhao Zi Ji","Zui Chang De Dian Yin","Zui Hou Yi Ye","Zui Hou Yi Ye (PGM)"],"Mini":["Ai Ni","Ai Ni Dan Shuo Bu Chu Ko","Ai Ni Dan Shuo Bu Chu Ko (PGM)","Ai Ni Dan Shuo Bu Chu Kou (PGM)","Ai Ren Cuo Guo","Bie Zhao Wo Ma Fan","Dai Wo Qu Ye Sheng Huo","Dai Wo Qu Zhao Ye Sheng Huo","Dance Monkey","Dang Ni","Di Yi Tian","Di Yi Tian (PGM)","Diao Le","E Lang Chuan Shuo","Ge Qian","Gei Ni Yi Ping Mo FA Yao Shui (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gei Wo Yi Ge Li You Wang Ji","Gei Wo Yi Gei Li You Wang Ji","Hai Yu Ni (PGM)","I'm Yours","Ji Mo Ji Mo Jiu Hao","Jian Dan Ai","Ka fei  咖啡","Kai Bu Liao Kou","Kai Shi Dong Le","Kuan Shu (PGM)","Lei Hai","Li Kai Wo De Yi Lai","Meng Zhong Ren","Ni shi wo de wei yi 你是我的唯一","PS Wo Ai Ni","Ri Bu Luo","Ru Guo Ni Ye Ting Shuo","Ru Yuan","San Tian San Ye","Tai Yang","Tian Xia You Qing Ren","Tu Ran Hao Xiang Ni","Wo De Mi Mi","Wo Hao Xiang Ni","Wo Huai Nian De","Wo Yao Kuai Le","Xia Tian De Feng","Xie Yi Shou Ge","Xiu Lian Ai Qing","Yang Guang Zai Nan","Yang guang zai nan  阳光宅男","Yi Ge Ren Xiang Zhe Yi Ge Ren","Yi Nian (PGM)","Yin Wei Ai Qing","Yin Xin De Chi Ban","Ying Xing De Chi Ban","Yu Ai","Yue Ya Wan","Yue Ya Wan (PGM)","Zi Zi Ju Ju","Zi you 自由"],"Gin":["APT","Ai Hen Jian Dan","Ai Ren Cuo Guo","Bad Guy","Best Part","Dai Wo Qu Zhao Ye Sheng Huo","Dao Dai","Domino","Don't Start Now","Gu Yong Ze","Guang Nian Zhi Wai","Jie Tuo","Kai Shi Dong Le","Li Bai","Long Juan Feng","Move Like Jagger","Ni Yao De Ai","Price Tag","Qing Tian","R&B All Night","Ru Guo Ni Ye Ting Shuo","Te Bie De Ren","Thinking Out Loud","Tian Hou","Versace On The Floor","Wo Hao Xiang Ni","Wu Mei Zi Jiang","Xiao Xin Yun","Yan Yuan","Yu Ai","Zhi Shao Hai You Ni","Zhi Shi Tai Ai Ni"],"Sean":["Ai Ren Cuo Guo (PGM)","Ai Shang Ni Suan Wo Jian","Ai Wo De Shi Hou (PGM)","Bie Wen Hen Ke Pa (PGM)","Gei Ni Yi Ping Mo FA Yao Shui (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gei Wo Yi Shou Ge De Shi Jian (PGM)","Guai Tian Qi (PGM)","Guo Le Ji Tian (PGM)","Hai Shi Hui (PGM)","Hei Se Liu Ding (PGM)","Hui Dao Guo Qu (PGM)","Jin Ji Lian Luo Ren (PGM)","Jin Lang Man Chao Wen Xin (PGM)","Jing Ji Lian Luo Ren (PGM)","Jing Lang Man Chao Wen Xin (PGM)","Kuan Shu (PGM)","Lang Fei (PGM)","Lian Ai ING","Liu Sha (PGM)","Mi Gong (PGM)","Nv Hai (PGM)","Pu Tong Peng You (PGM)","Qing Tian","Qu Bei Ji Wang Ji Ni","Ren Sheng Qi Qi Luo Luo Luo Lou (PGM)","Ru Guo Ai Wang Le (PGM)","Sha Zi (PGM)","Shu Qing Ge (PGM)","Shun","Shuo Huang (PGM)","Shuo huang","Tai Yang Yu Di Qiu","Tian Hei Hei (PGM)","Tian Hei Qing Bi Yan (PGM)","Wo Hai Shi Ai Zhe Ni (PGM)","Wo Luo Lei Qing Cu Ling Sui (PGM)","Wo Luo Lei Qing Xu Ling Sui (PGM)","Xiao Zhen Gu Nian (PGM)","Xiao Zhen Gu Niang (PGM)","Yi Hou Bie Zuo Peng You (PGM)","Yong Bei Ji Chang Qing Ge","You Yi Chang Chun (PGM)","Zai Jia Na Gong He Guo (PGM)","Zai Jia Na Gong He Guo Li Hun (PGM)","Zi Ran Xing (PGM)","Zi Yi Wei (PGM)","Zi Zi Ju Ju (PGM)"],"Katie":["Ai Ni Dan Shuo Bu Chu Ko (PGM)","Da Ge","Gei Ni Yi Ping Mo FA Yao Shui (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Ke Zai Wo Xing Di De Ming Zhi","Ru Guo Ke Yi","Tai Yang Yu Di Qiu","Te Bie De Ren","Wei Yi","Xi Tie Jie","Xing Qing","Yang Guang Zai Nan","Yang Guang Zai Nan (PGM)"],"Rice":["Ni Guang","Ni Yao De Ai","Ning meng cao de wei dao","Te bie de ren","Tian hou","Wo Bu nan guo","Wo yao kuai le"],"PDF Tong":["APT","Ai Ni","Ai Ren Cuo Guo","Ai Ren Cuo Guo (PGM)","Ai Wo Bie Zou","Cha Bu Duo De Gu Nian (PGM)","Da Feng Chui","Dai Wo Zou","Dang Ni","Dao Dai","Duo Yuan Dou Yao Zai Yi Qi","Eyes Nose Lips","Guai Mei De (PGM)","Guai Mei Di ( PGM )","Guai Tian Qi (PGM)","Gurenge","Long","Long Juan Feng","Mei Gui Shao Nian ( PGM )","Mei Gui Shao Nian (PGM)","Neng Yu Jian Jiu Hen Bu Cuo Le","Ni Guang","Qing Tian","Shuai Dai Fen Shou (PGM)","Shuai Dao Fen Shou","Shuai Dao Fen Shou (PGM)","Tai Yang Zhi Zi (PGM)","Wei Yi","Wo De Hua Ban Xie (PGM)","Wo De Xin Yi ( PGM )","Wo De Xin Yi (PGM)","Xian Hua","Xiang He Ni Kan Wu Yue De Wan Xia","Yang Guang Zai Nan","Ye Ren","Yi Lu Xiang Bei","Yong Qi"],"Bird":["Ai Cuo","Ai Ren Cuo Guo","Ai Wo Hai Shi Ta","Bu Ai Wo Jiu La Dao","Bu Neng Shuo De Mi Mi","Bu Wei Shui Er Zuo De Ge","Cao Chao","Chao Cao","Dao Xiang (Rock)","Fen Shou Ba","Ge Qian","He Qian","Hou Lai De Wo Men","It's My Life","It's my life","Kan Zhe Wo De Yan Jing Shuo","Li Bai","Li Bai (PGM)","Li Kai Di Qiu Biao Mian","Lian Ai ING","Mo Ban Che","Ni Shi Wo De Yan","Pai Dui Dong Wu","Rang Wo Liu Zai Ni Sheng Bian","Rang Wo Liu Zai Ni Sheng Bian (PGM)","Rang Wo Liu Zai Wo Sheng Bian (PGM)","Shang XIn De Ren Bie Ting Man Ge","Shang Xin De Ren Bie Ting Man Ge","Sheng Xia Guang Nian","Sheng Xia Guang Nian (PGM)","Shuai Dao Fen Shou","Tai Yang Zhi Zi","Tai Yang Zhi Zi (PGM)","Tian Hou","Tu Ran Hao Xiang Ni","Wang Fei","Wen Rou","Wo Shi Fen Nu","Xian Hua","Yang Guang Zai Nan","Yi Lu Xiang Bei","Yi Lu Xiang Bei (PGM)"],"Cassy":["Ai Ren Cuo Guo","Cai Hong","Cong Qian Shuo","Dang Ni","Diao Le","Hou Lai","Jiu Rang Zhe Da Yu Luo Xia","Long","Mei Li Kai Guo","Mo","Ru Yuan","Tiao Lou Ji","Wo Hao Xiang Ni","Zi You"],"Zqames":["Bad Romance","Bang Bang","Circle Of Life (PGM)","Creep","Die With A Smile","Hei Se Liu Ding","Hei Se Liu Ding (PGM)","Hei Se You Mo","I Will Survive","If I Ain't Got You","Lei Hai","Locked Out Of Heaven","Locked out of heaven","Love The Way You Lie","Ni Guang","Ni Shi Wo De Yan","Ni Yao De Ai","Qing Tian","Rolling In The Deep","Shang Xin De Ren Bie Ting Man Ge","Si Le Do Yao Ai","Si Le Dou Yao Ai","Sunday Morning","Ting Hai","Uptown Funk","Uptown Funk (PGM)","Wang Fei","Wo Men De Ai","Yang Chong","Yang Cong"],"Danz":["Au Cuo","Neng Yu Jian Jiu Hen Bu Cuo Le","Ni Man Wo Man","Pu Tong Peng You","Rang Wo Liu Zai Ni Sheng Bian","Shan Hai","Te Bie De Ren"],"Stephie":["Ai ai ai","Bai Nian Gu Ji","Begging","Da Ge","Duo Yuan Dou Yao Zai Yi Qi","Jue Ai","Ni Guang","Qi Mei Di","Rolling In The Deep","Tian Hou","Ting Jian Xia Yu De Sheng Yin","Treasure"],"Skipper":["Di Yi Tian","Guang Nian Zhi Wai","Kun Zhu ( PGM )","Ni Bu Shi Zhen Zheng De Kuai Le","Ni Man Wo Man","San Tian San Ye","Tiao Lou Ji","Wo De Xin Yi ( PGM )","Wo Yao Kuai Le","Yue Ya Wan"],"Jess":["Ai Ai Ai","Ai Cuo","Ai Ni Dan Shuo Bu Chu Ko","Di Yi Tian (PGM)","Duo Yuan Dou Yao Zai Yi Qi","Lei Hai","Ni A Ni A","Ni Guang","P.S. Wo Ai Ni","Qi Mei Di","Rang Wo Liu Zai Ni Sheng Bian","Ren De Zhe Yi Shen","Shi Lian Wu Zui","Shuai Dao Fen Shou","Tian Hou","Wei Yi","Wo Hao Xiang Ni","Xi Huan Ni","Xin Fu Zai Ge Chang","Yi Ge Ren Xiang Zhe Yi Ge Ren","Zi You"],"Lenny":["Ai De Jiu Shi Ni","Ai Wo Bie Zou","Ai Wo Hai Shi Ta","Beggin","Bei Ji Xing De Yan Lei","Cao Jie Zhi","Chao Cao","Dont Look Back In Anger","Feeling Good","Kan Zhe Wo De Yan Jing Shuo","Kiss Goodbye","Lei Hai","Li Bai","Li Kai Di Qiu Biao Mian","Liang Liang","Lose Control","Lover Boy","Messy","R&B All Night","San Ren You","Shan Hai","Shuai Dao Fen Shou","Shun","Ta Bu Ai Wo","Tian Hou","Too Good At Goodbye","Too Good At Goodbyes","Wang Fei","Wo Hao Xiang Ni","Xiang Tai Duo","Xing Fu Mo Tian Lun","Zi You"],"Andre":["Ai Cuo","Ai Ren Cuo Guo","Golden Hour","Lose Control","Na Xie Ni Hen Mao Xian De Meng","Shu Le Ni Ying Le Shi Jie You Ru He","Sugar","Te Bie De Ren","Tu Ran Hao Xiang Ni","Versace On The Floor","When I Was Your Man","Wo Huai Nian De"],"Angeline":["Ai Ni","Bai Nian Gu Ji","Ni Man Wo Man","Tian Hou","Xia Yu Tian","Ye Zi","Yue Ya Wan","Zhi You"],"Vans":["Ai Cuo","Ai Hen Jian Dan","Forever Love (PGM)","Gu Yong Ze (PGM)","Lei Hai","Li Ge","Li Kai Di Qiu Biao Mian","Lian Ai ING","Piao Xiang Bei Fang","Shang Xing De Ren Bie Ting Man Ge","Shu Le Ni Ying Le Shi Jie You Ru He","Si Le Do Yao Ai","Wang Fei","Wu Kong","Wu Kong (PGM)","Xian Hua","Xian Hua (PGM)","Ye Ren","Yi Lu Xiang Bei"],"Spell":["Don't Start Now","Hei Se Liu Ding","Ling Chen San Dian Zhong","Ni Yao De Ai","Tao Tai","Yellow","You Mei You"],"Jyang":["Ai Si Ni (PGM)","Ai Wo Bie Zou","An Jing (PGM)","Bu Xiang Shang Ban (PGM)","Colourful (PGM)","Fly Out (PGM)","Gan Xie Ni Ceng Lai Guo (PGM)","Gan Xie Ni Chen Lai Guo (PGM)","Hei Se Liu Ding (PGM)","Kai Bu Liao Kou (PGM)","Kan Zhe Wo De Yan Jing Shuo","Lang Zi Hui Tou (PGM)","Li Bai ( PGM)","Li Kai Di Qiu Biao Mian","Li Kai Di Qiu Biao Mian (PGM)","Neng Yu Jian Jiu Hen Bu Cuo Le (PGM)","Ni Hai Yao Wo Zen Yang (PGM)","Ni Ming De Hao You (PGM)","Ni Yao De Ai","Nv Hai (PGM)","Qi Tian Da Sheng","Qi Tian Da Sheng (PGM)","Qing Tian","Rang Wo Wei Ni Chang Qing Ge (PGM)","Ru Guo Ai Wang Le (PGM)","Ru Guo Na Tong Dian Hua You Jie Tong (PGM)","Ruo Yue Liang Mei Lai (PGM)","Shan Hai (PGM)","Shou Fang Kai (PGM)","Shuai dao fen shou","Shuang Jie Gun (PGM)","Shuo Huang (PGM)","Tian Hei Qing Bi Yan (PGM)","Tian Hou (PGM)","Ting Ma Ma De Hua (PGM)","Wang Zi De Xin Yi (PGM)","Wo De Mai Ke Feng (PGM)","Wu Le Bu Zuo (PGM)","Xiang Tai Duo (PGM)","Yang Guang Zhai Nan (PGM)","Yi Fu Zhi Ming (PGM)","Yi Ge Ren Xiang Zhe Yi Ge Ren","Yi Nian (PGM)","Zhi Shi Tai Ai Ni (PGM)","Zi You","Zi you 自由","Zu Gou","Zui Hou Yi Ye (PGM)"],"Mindy":["8.0","A Er Zi Hai Mo De Ai (PGM)","Ai Qing Zen Me Le Ma (PGM)","Ai Shang Ni Deng Yu Ai Shang Ji Mo (PGM)","Ai Si Ni (PGM)","Ai Xiao De Yan Jing","Ai Xiao De Yan Jing (PGM)","All I Ask (PGM)","All I ask (PGM)","Chao Kuai Gan (PGM)","Chou Ba Guai (PGM)","Dance Monkey","Dance Monkey (PGM)","Dao Xiang (Rock)","Dao Xiang Rock (Sprite version)","Di Yi Tian (PGM)","Dian Qi Jiao Jian Ai (PGM)","Gan Xie Ni Ceng Lai Guo (PGM)","Gan Xie Ni Chen Lai Guo (PGM)","Gu Ji Gu Ji (PGM)","Guan Jian Chi (PGM)","Hei Se You Mo (PGM)","Last Dance (PGM)","Lei Hai","Meng Zhong Ren (PGM)","Ni Bu Shi Zhen Zheng De Kuai Le","Ni Yao De Ai","Ni Yao De Ai (PGM)","Reflection (PGM)","Ri Bu Luo","Ru Guo Ai Wang Le (PGM)","Ru Guo Mei You Ni (PGM)","Ru Yuan (PGM)","Ruo Yue Liang Mei Lai (PGM)","Tong Hua Shun (PGM)","Versace On The Floor","Wo Ai Ni","Wo Hai Mei You Zuo Hao Bei Da Dao De Zhun Bei (PGM)","Xian Hua","Xian Hua (PGM)","Xiao Ban (PGM)","Yi Bai Zhong Sheng Huo (PGM)","Yi Nian (PGM)","Yue Ya Wan","Zhi Shao Hai You Ni","Zhi You (PGM)","Zi you"],"Bryan":["Ai Cuo","Ai Ren Cuo Guo","Chou Ba Guai","Hao Bu Rong Yi","Ji Mo Xian Shen","Ji Mo Xian Sheng","Li Bai","Long Juan Feng","Ni Bu Zhi Dao De Shi","Pu Tong Peng You","Qing Tian","Ru Guo Ke Yi","Shan Hai","Shang Xin De Ren Bie Ting Man Ge","Shu Le Ni Ying Le Shi Jie You Ru He","Shu Le Ni Ying Le Shi Jie You Ru He (PGM)","Tian Kong Mei You Ji Xian","Tian Tian","Tu Ran Hao Xiang Ni","Wo Hao Xiang Ni","Xi Huan Ni","Xia Yu Tian","Yu Ai","Zhao Zi Ji"],"Alex":["Beggin","Golden Hour (PGM)","Hai Yu Ni (PGM)","Hou Lai De Wo Men","If You","If You (PGM)","Li Bai (PGM)","Lonely Dance (PGM)","Mi Gong","Qi Lin (PGM)","Qu Bei Ji Wang Ji Ni","Ru Guo Wo Bian Cheng Hui Yi","Shun","Te Bie De Ren","Tu Ran Hao Xiang Ni","Tuo Fei Lun","Uptown Funk","Uptown Funk (PGM)","Wo Hao Xiang Ni (PGM)","Xian Hua","Xian Hua (PGM)","Yi Ban Yi Ban","Yi Lu Xiang Bei","Yi Lu Xiang Bei (PGM)","Zhuan Shu Tian Shi (PGM)"],"June":["Ai Ni Dan Shuo Bu Chu Ko (PGM)","Ai Ni Dan Shuo Bu Chu Kou (PGM)","Bai Nian Gu Ji (PGM)","Born This Way (PGM)","Di Yi Tian (PGM)","Fei Ji Chang De 10:30 (PGM)","Jie Jie (PGM)","Jie Mei (PGM)","Jie Shou (PGM)","Kao Jin (PGM)","Long Juan Feng (PGM)","Love Song (PGM)","Man Leng (PGM)","Ni Yao De Ai (PGM)","R&B All Night (PGM)","San Tian San Ye (PGM)","Shui Xing Ji (PGM)","Si Nian Shi Yi Zhong Bing (PGM)","Te Bie De Ren","Tian Tian (PGM)","Ting Jian Xia Yu De Sheng Yin (PGM)","Wei Yi (PGM)","Xing Fu Zai Ge Chang (PGM)","Xing Zou De Yu (PGM)","Zhi You (PGM)"],"PDF":["11 (PGM)","Ai Ren Cuo Guo (PGM)","Cha Bu Duo De Gu Niang (PGM)","Guai Tian Qi (PGM)","Gurenge (PGM)","If You (PGM)","Mei Gui Shao Nian (PGM)","Ni Yao De Ai","Qi Lin (PGM)","Shuai Dao Fen Shou (PGM)","Tai Yang Zhi Zi (PGM)","Ting Jian Xia Yu De Sheng Yin (PGM)","Wei Yi","Wo De Xin Yi (PGM)","Xian Hua","Xian Hua (PGM)","Xiang He Ni Kan Wu Yue De Wan Xia","Ye Ren","Yi Lu Xiang Bei","Yi Lu Xiang Bei (PGM)","Zai Jia Na Gong He Guo Li Hun (PGM)"],"Coen":["Ai Jiu Jian Ren Xin (PGM)","Best Part","Birds Of A Feather","Bu Chao Bu Yong Hua Qian","Dao Di Fa Shen Guo Shen Me Shi","Dian Qi Jiao Jian Ai","Hai Yu Ni (PGM)","I Will Survive","I'll Survive","Jin Ji Lian Luo Ren","Jin Ji Lian Luo Ren (PGM)","Long Juan Feng","Mi Gong","Ni Man Wo Man","Pu Tong Peng You","Pu Tong Peng You (PGM)","Qi Mei Di","Shui Yue Ru Ge","So Easy","Sui Yue Ru Ge","Te Bie De Ren","Tian Xia You Qing Ren","Tong Hua Shun","Watermelon Sugar","Xiang Yi Wei Ming","Yi Nian (PGM)","Yin Wei Ai Qing","Zhong Sheng Mei Li"],"Kopi":["Ai Cuo","Ai Shang Ni Suan Wo Jian","Ai Wo Bie Zo","Na Li Dou Shi Ni","Shan Hai","Shu Qing Ge","Shun","Tian Tian"]}};
+
+// ─── CONFIG: 拿到 Apps Script URL 后填在这里 ───
+let SV_SCRIPT_URL = localStorage.getItem('sv_script_url') || 'https://script.google.com/macros/s/AKfycbzh5FCVeyk4fKwVB1UacZ2gxXRLOnBx0sWPMIsCHsfr745Xr-QbooSyCD7AUki1BP_G/exec';
+
+// ─── State ───
+let svSelectedSongs = [];
+let svTodayData = null;
+
+// ─── Init ───
+function svInit() {
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0,10);
+  const dateEl = document.getElementById('sv-date');
+  if (dateEl) dateEl.value = dateStr;
+  svLoadForDate(dateStr);
+  svLoadVotes(dateStr);
+}
+
+function svTodayKey() {
+  return document.getElementById('sv-date')?.value || new Date().toISOString().slice(0,10);
+}
+
+function svLoadForDate(dateOverride) {
+  const dateStr = dateOverride || svTodayKey();
+  const info = TP_DATA.schedule[dateStr];
+  const infoEl = document.getElementById('sv-tonight-info');
+  const singersEl = document.getElementById('sv-tonight-singers');
+  const fsTonight = document.getElementById('sv-fs-tonight');
+
+  if (!info || !info.singers.length) {
+    if (infoEl) infoEl.textContent = dateStr + ' — 暂无演出安排';
+    if (singersEl) singersEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">该日期没有排班，请手动调整日期</div>';
+    if (fsTonight) fsTonight.textContent = '今晚';
+    svTodayData = null;
+    return;
+  }
+
+  svTodayData = info;
+  const singerNames = info.singers.join(' · ');
+  if (infoEl) infoEl.textContent = dateStr + ' · ' + singerNames;
+  if (fsTonight) fsTonight.textContent = singerNames;
+
+  if (singersEl) {
+    singersEl.innerHTML = '<div class="tonight-badge">🎤 ' + singerNames + '</div>';
+  }
+
+  // Build fullscreen song cards
+  svBuildVotingCards(info);
+}
+
+function svBuildVotingCards(info) {
+  const container = document.getElementById('sv-fs-songs');
+  if (!container) return;
+  container.innerHTML = info.songs.map(song => {
+    const singerStr = song.s.join(' & ');
+    const key = encodeURIComponent(song.t + '|||' + singerStr);
+    return `<div class="vote-song-card" data-key="${key}" data-title="${escHtml(song.t)}" data-singer="${escHtml(singerStr)}" onclick="svToggleSong(this)">
+      <span class="vote-song-check">✓</span>
+      <div class="vote-song-title">${escHtml(song.t)}</div>
+      <div class="vote-song-singer">${escHtml(singerStr)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Voting Mode ───
+function svEnterVotingMode() {
+  const today = svTodayKey();
+  if (!svTodayData) { svLoadForDate(today); }
+  svSelectedSongs = [];
+  svUpdateCounter();
+  // Reset UI
+  document.getElementById('sv-fs-songs').style.display = '';
+  document.getElementById('sv-fs-thanks').style.display = 'none';
+  document.querySelectorAll('.vote-song-card').forEach(c => c.classList.remove('selected'));
+
+  const overlay = document.getElementById('sv-fullscreen');
+  overlay.classList.add('vote-mode-active');
+  overlay.style.display = '';
+  document.body.style.overflow = 'hidden';
+}
+
+function svExitVotingMode() {
+  document.getElementById('sv-fullscreen').style.display = 'none';
+  document.getElementById('sv-fullscreen').classList.remove('vote-mode-active');
+  document.body.style.overflow = '';
+  svLoadVotes();
+}
+
+function svToggleSong(el) {
+  const key = el.dataset.key;
+  const title = el.dataset.title;
+  const singer = el.dataset.singer;
+  const idx = svSelectedSongs.findIndex(s => s.key === key);
+
+  if (idx >= 0) {
+    svSelectedSongs.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    if (svSelectedSongs.length >= 5) {
+      el.style.animation = 'none'; el.style.border = '1.5px solid #E8621A';
+      setTimeout(() => { el.style.border = ''; }, 400);
+      return;
+    }
+    svSelectedSongs.push({ key, title, singer });
+    el.classList.add('selected');
+  }
+  svUpdateCounter();
+}
+
+function svUpdateCounter() {
+  const n = svSelectedSongs.length;
+  const counter = document.getElementById('sv-fs-counter');
+  const counterBadge = document.getElementById('sv-fs-count');
+  const submitBtn = document.getElementById('sv-fs-submit');
+  if (counter) counter.textContent = n + ' / 5';
+  if (counterBadge) counterBadge.textContent = n;
+  if (submitBtn) submitBtn.disabled = n === 0;
+}
+
+function svSubmitVote() {
+  if (!svSelectedSongs.length) return;
+  const dateStr = svTodayKey();
+  const storageKey = 'tangping_votes_' + dateStr;
+  let votes = {};
+  try { votes = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+
+  svSelectedSongs.forEach(s => {
+    const k = s.title + '|||' + s.singer;
+    votes[k] = (votes[k] || 0) + 1;
+  });
+  localStorage.setItem(storageKey, JSON.stringify(votes));
+
+  // Show thanks
+  document.getElementById('sv-fs-songs').style.display = 'none';
+  document.getElementById('sv-fs-thanks').style.display = 'flex';
+  document.getElementById('sv-fs-submit').disabled = true;
+
+  // Auto-reset for next voter after 5s
+  setTimeout(() => {
+    svSelectedSongs = [];
+    svUpdateCounter();
+    document.getElementById('sv-fs-songs').style.display = '';
+    document.getElementById('sv-fs-thanks').style.display = 'none';
+    document.querySelectorAll('.vote-song-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('sv-fs-submit').disabled = true;
+  }, 5000);
+}
+
+// ─── Vote Stats ───
+async function svLoadVotes(dateOverride) {
+  const dateStr = dateOverride || svTodayKey();
+  const label = document.getElementById('sv-vote-count-label');
+  const container = document.getElementById('sv-vote-stats');
+  if (!container) return;
+
+  let votes = {};
+
+  // Try Apps Script endpoint first (real phone votes)
+  if (SV_SCRIPT_URL && SV_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    if (label) label.textContent = '读取中...';
+    try {
+      const res = await fetch(SV_SCRIPT_URL + '?date=' + dateStr);
+      const json = await res.json();
+      if (json.tally) {
+        votes = json.tally;
+        if (label) label.textContent = '共 ' + Object.keys(votes).length + ' 首歌被投票 · ' + json.voterCount + ' 位顾客 · 来自 Google Sheet';
+      }
+    } catch(e) {
+      // Fall back to localStorage
+    }
+  }
+
+  // Fallback: read from localStorage (same-device votes)
+  if (!Object.keys(votes).length) {
+    const storageKey = 'tangping_votes_' + dateStr;
+    try { votes = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+    const total = Object.values(votes).reduce((s,v) => s+v, 0);
+    if (label && Object.keys(votes).length) label.textContent = '共 ' + Object.keys(votes).length + ' 首歌被投票 · 总票数 ' + total + ' · 来自本机缓存';
+  }
+
+  const entries = Object.entries(votes).sort((a,b) => b[1]-a[1]);
+
+  if (!entries.length) {
+    container.innerHTML = `<div class="empty-votes">
+      <div>暂无投票数据</div>
+      <div style="font-size:12px;margin-top:8px;color:#aaa;">
+        ${SV_SCRIPT_URL && SV_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE'
+          ? '顾客通过投票页投票后会显示在这里'
+          : '⚠️ 请先在「设置」里填入 Apps Script URL'}
+      </div>
+    </div>`;
+    if (label && !Object.keys(votes).length) label.textContent = '暂无数据';
+    return;
+  }
+
+  const maxV = entries[0][1];
+  container.innerHTML = '<table class="vote-table"><thead><tr><th>#</th><th>歌曲</th><th>歌手</th><th>票数</th><th></th></tr></thead><tbody>' +
+    entries.map(([k, v], i) => {
+      const [title, singer] = k.split('|||');
+      const pct = Math.round((v/maxV)*100);
+      return `<tr>
+        <td style="color:var(--muted);font-size:12px;">${i+1}</td>
+        <td style="font-weight:600;">${escHtml(title)}</td>
+        <td style="color:var(--muted);">${escHtml(singer||'')}</td>
+        <td style="font-weight:700;color:var(--primary);">${v}</td>
+        <td style="width:80px;"><div class="vote-bar" style="width:${pct}%"></div></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+// ─── Settings: Apps Script URL ───
+function svSaveUrl() {
+  const url = document.getElementById('sv-script-url-input').value.trim();
+  SV_SCRIPT_URL = url;
+  localStorage.setItem('sv_script_url', url);
+  document.getElementById('sv-url-saved').style.display = '';
+  setTimeout(() => { document.getElementById('sv-url-saved').style.display = 'none'; }, 2000);
+}
+
+// ─── Sub-tab ───
+function svShowMode(mode) {
+  ['vote','director','settings'].forEach(m => {
+    document.getElementById('sv-' + m).style.display = m === mode ? '' : 'none';
+    document.getElementById('sv-btn-' + m).classList.toggle('active', m === mode);
+  });
+  if (mode === 'director') { svLoadVotes(); svLoadForDate(); }
+  if (mode === 'settings') {
+    const inp = document.getElementById('sv-script-url-input');
+    if (inp) inp.value = SV_SCRIPT_URL || '';
+  }
+}
+
+// ─── AI Setlist Generation ───
+async function svGenerateSetlist() {
+  const btn = document.getElementById('sv-ai-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ AI 排歌中...';
+
+  const dateStr = svTodayKey();
+  const storageKey = 'tangping_votes_' + dateStr;
+  let votes = {};
+  try { votes = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+
+  const info = TP_DATA.schedule[dateStr] || svTodayData;
+  if (!info) {
+    document.getElementById('sv-setlist-container').innerHTML = '<div class="card" style="color:var(--muted);text-align:center;padding:20px;">请先加载今天的演出日期</div>';
+    btn.disabled = false;
+    btn.textContent = '✨ AI 排歌（根据投票）';
+    return;
+  }
+
+  const singerNames = info.singers.join(', ');
+  const voteList = Object.entries(votes).sort((a,b)=>b[1]-a[1])
+    .map(([k,v]) => { const [t,s]=k.split('|||'); return `${t} (${s||''}) - ${v}票`; }).join('\n') || '暂无投票数据（将按默认歌单编排）';
+
+  const fullSongList = info.songs.map(s => `${s.t} - ${s.s.join('/')} [${s.set}]`).join('\n');
+
+  const prompt = `你是躺平 Tăng Píng KL（Subang KL，马来西亚）的音乐总监助理。
+今晚日期：${dateStr}
+今晚歌手：${singerNames}
+
+今晚完整歌单（含Set分组，来自排班表）：
+${fullSongList}
+
+顾客投票结果（票数从高到低）：
+${voteList}
+
+请根据以下Flow逻辑，重新编排今晚的歌单：
+
+Flow规则：
+- Set 1（6首）：暖场，节奏中等，风格多元，欢迎观众入场
+- Set 2（6首）：情绪建立，情歌/抒情为主，开始有代入感
+- Set 3（6首）：高潮，票数最高的歌优先放这里，最受欢迎的歌曲
+- Set 4（6首）：收尾，有力量感，情感高点，最后一首要有记忆度
+- 规则：同一歌手不连续超过2首；高票歌曲优先进入Set 2-3；整体节奏要有起伏
+
+请只输出JSON，格式如下（不要加任何说明文字）：
+[{"set":"Set 1","order":1,"title":"歌名","singer":"歌手","key":"调","votes":0,"note":"编排理由一句话"},...]
+
+输出必须是完整的JSON数组，包含所有应演出的歌曲（约24首）。`;
+
+  document.getElementById('sv-setlist-container').innerHTML = `<div class="card"><div class="loading-state"><div class="spinner"></div><div>AI 正在根据投票结果编排今晚歌单...</div></div></div>`;
+
+  try {
+    const result = await window.cowork.askClaude(prompt, []);
+    let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
+    
+    // Extract JSON
+    let setlist = null;
+    try { setlist = JSON.parse(raw.trim()); } catch(e) {}
+    if (!setlist) { const m = raw.match(/\[([\s\S]+?)\]/); if (m) try { setlist = JSON.parse('['+m[1]+']'); } catch(e2) {} }
+    if (!setlist) { const s=raw.indexOf('['), e=raw.lastIndexOf(']'); if(s>-1&&e>s) try{setlist=JSON.parse(raw.slice(s,e+1));}catch(e2){} }
+
+    if (!setlist || !setlist.length) throw new Error('无法解析 AI 返回');
+    svRenderSetlist(setlist);
+  } catch(e) {
+    document.getElementById('sv-setlist-container').innerHTML = `<div class="card"><div class="empty-state"><div class="empty-icon">⚠️</div><div>排歌失败，请重试</div><div style="font-size:12px;margin-top:6px;">${escHtml(e.message)}</div></div></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ AI 排歌（根据投票）';
+  }
+}
+
+// ─── Render & edit setlist ───
+let svSetlistData = [];
+
+function svRenderSetlist(data) {
+  svSetlistData = data;
+  const sets = ['Set 1','Set 2','Set 3','Set 4'];
+  const colors = {'Set 1':'#6366F1','Set 2':'#E8621A','Set 3':'#DC2626','Set 4':'#059669'};
+  let html2 = '';
+
+  sets.forEach(setName => {
+    const songs = data.filter(s => s.set === setName);
+    if (!songs.length) return;
+    html2 += `<div class="section-divider" style="border-color:${colors[setName]||'var(--primary)'};color:${colors[setName]||'var(--primary)'};">${setName}</div>`;
+    songs.forEach((song, idx) => {
+      const globalIdx = data.indexOf(song);
+      html2 += `<div class="setlist-item" id="sl-${globalIdx}">
+        <span class="setlist-set-label" style="background:${colors[setName]+'22'};color:${colors[setName]}">${setName}</span>
+        <div class="setlist-song">
+          <div class="setlist-song-title">${escHtml(song.title)}</div>
+          <div class="setlist-song-meta">${escHtml(song.singer)} · ${escHtml(song.key||'')} ${song.note ? '· <em>'+escHtml(song.note)+'</em>' : ''}</div>
+        </div>
+        <div class="setlist-votes">${song.votes > 0 ? '🔥'+song.votes : ''}</div>
+        <button class="setlist-move" onclick="svMoveItem(${globalIdx},-1)" title="上移">↑</button>
+        <button class="setlist-move" onclick="svMoveItem(${globalIdx},1)" title="下移">↓</button>
+      </div>`;
+    });
+  });
+
+  html2 += `<div style="display:flex;gap:8px;margin-top:16px;">
+    <button class="btn-primary" onclick="svConfirmSetlist()">✅ 确认今晚歌单</button>
+  </div>`;
+
+  document.getElementById('sv-setlist-container').innerHTML = html2;
+  document.getElementById('sv-confirm-area').style.display = 'none';
+}
+
+function svMoveItem(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= svSetlistData.length) return;
+  [svSetlistData[idx], svSetlistData[newIdx]] = [svSetlistData[newIdx], svSetlistData[idx]];
+  svRenderSetlist(svSetlistData);
+}
+
+function svConfirmSetlist() {
+  const sets = ['Set 1','Set 2','Set 3','Set 4'];
+  let text = '🎵 今晚歌单 ' + svTodayKey() + '\n\n';
+  sets.forEach(s => {
+    const songs = svSetlistData.filter(x=>x.set===s);
+    if (!songs.length) return;
+    text += '── ' + s + ' ──\n';
+    songs.forEach((song,i) => { text += `${i+1}. ${song.title}（${song.singer}）${song.votes>0?'🔥':''}\n`; });
+    text += '\n';
+  });
+  document.getElementById('sv-confirmed-text').textContent = text;
+  document.getElementById('sv-confirm-area').style.display = '';
+  document.getElementById('sv-confirm-area').scrollIntoView({behavior:'smooth'});
+}
+
+function svCopySetlist() {
+  const text = document.getElementById('sv-confirmed-text').textContent;
+  const btn = event.target;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ 已复制';
+    setTimeout(() => { btn.textContent = '📋 复制歌单'; }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ 已复制';
+    setTimeout(() => { btn.textContent = '📋 复制歌单'; }, 2000);
+  });
+}
+
+// svInit is called from showTab above when songvote tab is opened
+
+</script>
+</body>
+</html>

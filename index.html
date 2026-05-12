@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>躺平 今晚点歌</title>
+<style>
+:root {
+  --primary: #E8621A;
+  --primary-dim: rgba(232,98,26,0.12);
+  --bg: #0C0C0C;
+  --card: #181818;
+  --border: #2A2A2A;
+  --text: #F0F0F0;
+  --muted: #888;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100%; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; }
+
+.header {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(12,12,12,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 18px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.logo { font-size: 15px; font-weight: 800; color: var(--primary); }
+.sub-info { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.pill {
+  background: #222; color: var(--muted);
+  font-size: 13px; font-weight: 700;
+  padding: 6px 14px; border-radius: 20px; transition: all 0.2s;
+  white-space: nowrap;
+}
+.pill.has-sel { background: var(--primary); color: white; }
+.pill.full { background: #22C55E; color: white; }
+
+.banner {
+  background: #130800; border-bottom: 1px solid #2D1500;
+  padding: 12px 18px; font-size: 13px; color: #CCA880;
+  line-height: 1.5; text-align: center;
+}
+.banner strong { color: var(--primary); }
+
+.performer-strip {
+  padding: 12px 16px 10px; display: flex; gap: 8px;
+  overflow-x: auto; border-bottom: 1px solid var(--border);
+}
+.performer-strip::-webkit-scrollbar { display: none; }
+.p-chip {
+  flex-shrink: 0; background: var(--card);
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 14px; font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+}
+.p-chip .dot { width: 6px; height: 6px; background: var(--primary); border-radius: 50%; flex-shrink:0; }
+
+.songs-wrap { padding: 0 14px 100px; }
+.sec-label {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 14px 4px 8px;
+}
+.songs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.song-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 13px 12px 11px;
+  cursor: pointer; transition: all 0.15s; position: relative; user-select: none;
+}
+.song-card:active { transform: scale(0.96); }
+.song-card.selected { background: var(--primary-dim); border-color: var(--primary); }
+.song-card.dimmed { opacity: 0.35; pointer-events: none; }
+
+.chk {
+  position: absolute; top: 8px; right: 8px;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: transparent; transition: all 0.15s; flex-shrink:0;
+}
+.song-card.selected .chk { background: var(--primary); border-color: var(--primary); color: white; }
+.s-tag { font-size: 10px; font-weight: 600; color: var(--primary); opacity: 0.8; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+.s-title { font-size: 13px; font-weight: 700; line-height: 1.35; color: var(--text); padding-right: 20px; }
+.song-card.selected .s-title { color: #FFD4A8; }
+
+.footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(12,12,12,0.97); border-top: 1px solid var(--border);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+}
+.sub-btn {
+  width: 100%; padding: 15px; background: var(--primary); color: white;
+  border: none; border-radius: var(--radius);
+  font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+}
+.sub-btn:disabled { background: #2A2A2A; color: #555; cursor: not-allowed; }
+.sub-btn.loading { opacity: 0.7; }
+
+/* Thanks */
+#thanks {
+  display: none; position: fixed; inset: 0; background: var(--bg); z-index: 100;
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 40px 24px;
+}
+.ty-icon { font-size: 72px; margin-bottom: 24px; animation: pop 0.4s ease; }
+.ty-title { font-size: 26px; font-weight: 800; color: var(--primary); margin-bottom: 12px; }
+.ty-sub { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 28px; }
+.ty-picks { width: 100%; max-width: 320px; margin-bottom: 28px; }
+.ty-pick { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 14px; font-size: 14px; font-weight: 600; color: #FFD4A8;
+  text-align: left; margin-bottom: 6px; }
+.ty-timer { font-size: 13px; color: #444; }
+
+/* No schedule */
+.no-show { display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height: 70vh; text-align:center; padding: 24px; }
+.no-show .icon { font-size: 48px; margin-bottom: 16px; }
+.no-show .msg { font-size: 15px; color: var(--muted); line-height: 1.7; }
+
+/* Spinner */
+.spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pop { 0%{transform:scale(0.5);opacity:0} 80%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div class="header">
+    <div>
+      <div class="logo">🌿 躺平 · 今晚点歌</div>
+      <div class="sub-info" id="hdr-date">—</div>
+    </div>
+    <div class="pill" id="pill">0 / 5</div>
+  </div>
+  <div class="banner">选出你最想听的 <strong>5 首歌</strong> 🎵 今晚歌手将优先演唱票数最高的歌曲</div>
+  <div class="performer-strip" id="perf-strip"></div>
+  <div class="songs-wrap" id="songs-wrap"></div>
+</div>
+
+<div class="footer" id="footer">
+  <button class="sub-btn" id="sub-btn" disabled onclick="submitVote()">请先选择歌曲</button>
+</div>
+
+<div id="thanks">
+  <div class="ty-icon">🎉</div>
+  <div class="ty-title">谢谢你的投票！</div>
+  <div class="ty-sub">你选的歌今晚有机会被演唱<br>好好享受今晚的音乐 🎶</div>
+  <div class="ty-picks" id="ty-picks"></div>
+  <div class="ty-timer" id="ty-timer">8 秒后重置给下一位</div>
+</div>
+
+<script>
+// ─── CONFIG — 拿到 Google Apps Script URL 后填在这里 ───
+const VOTE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzh5FCVeyk4fKwVB1UacZ2gxXRLOnBx0sWPMIsCHsfr745Xr-QbooSyCD7AUki1BP_G/exec';
+const DATE_OVERRIDE = ''; // 留空用今天日期，调试时可填 '2026-05-12'
+
+// ─── Song Data ───
+const TP_DATA = {"schedule":{"2026-05-01":{"singers":["Kopi","PDF","Zqames"],"songs":[{"t":"Shu Qing Ge","s":["Kopi"],"k":"E","set":"Set 1"},{"t":"Na Li Dou Shi Ni","s":["Kopi"],"k":"F","set":"Set 1"},{"t":"Wei Yi","s":["PDF"],"k":"C","set":"Set 1"},{"t":"Ye Ren","s":["PDF"],"k":"F","set":"Set 1"},{"t":"Circle Of Life (PGM)","s":["Zqames"],"k":"Bb","set":"Set 1"},{"t":"Ni Guang","s":["Zqames"],"k":"E","set":"Set 1"},{"t":"Cha Bu Duo De Gu Niang (PGM)","s":["PDF"],"k":"Ab","set":"Set 2"},{"t":"Shun","s":["Kopi"],"k":"G#","set":"Set 2"},{"t":"Tian Tian","s":["Kopi"],"k":"B","set":"Set 2"},{"t":"Si Le Dou Yao Ai","s":["Zqames"],"k":"Dm","set":"Set 2"},{"t":"Locked Out Of Heaven","s":["Zqames"],"k":"C","set":"Set 2"},{"t":"Ai Shang Ni Suan Wo Jian","s":["Kopi"],"k":"","set":"Set 3"},{"t":"Uptown Funk","s":["Zqames"],"k":"C","set":"Set 3"},{"t":"Shan Hai","s":["Kopi"],"k":"E","set":"Set 3"},{"t":"Qi Lin (PGM)","s":["PDF"],"k":"F#m","set":"Set 3"},{"t":"Bang Bang","s":["Zqames"],"k":"Db","set":"Set 3"},{"t":"Tai Yang Zhi Zi (PGM)","s":["PDF"],"k":"G","set":"Set 3"},{"t":"Wo De Xin Yi (PGM)","s":["PDF"],"k":"","set":"Set 4"},{"t":"Ai Wo Bie Zo","s":["Kopi"],"k":"B","set":"Set 4"},{"t":"Lei Hai","s":["Zqames"],"k":"A","set":"Set 4"},{"t":"Ai Cuo","s":["Kopi"],"k":"B","set":"Set 4"},{"t":"Yi Lu Xiang Bei","s":["PDF"],"k":"G","set":"Set 4"},{"t":"Wang Fei","s":["Zqames"],"k":"Em","set":"Set 4"}]},"2026-05-02":{"singers":["Bird","Jyang","VV"],"songs":[{"t":"Xian Hua","s":["Bird"],"k":"Eb","set":"Set 1"},{"t":"Yi Lu Xiang Bei","s":["Bird"],"k":"D","set":"Set 1"},{"t":"Sheng Qi Bai Ma (PGM)","s":["VV"],"k":"F","set":"Set 1"},{"t":"Duo Yuan Dou Yao Zai Yi Qi","s":["VV"],"k":"Eb - E","set":"Set 1"},{"t":"Ting Ma Ma De Hua (PGM)","s":["Jyang"],"k":"Bb","set":"Set 1"},{"t":"Bu Xiang Shang Ban (PGM)","s":["Jyang"],"k":"A","set":"Set 1"},{"t":"Hei Se Liu Ding (PGM)","s":["Jyang"],"k":"Ab","set":"Set 2"},{"t":"Tian Hou","s":["Bird"],"k":"A","set":"Set 2"},{"t":"Ting Shuo Ni","s":["VV"],"k":"C","set":"Set 2"},{"t":"Kan Zhe Wo De Yan Jing Shuo","s":["Jyang"],"k":"A","set":"Set 2"},{"t":"Tu Ran Hao Xiang Ni","s":["Bird"],"k":"C#","set":"Set 2"},{"t":"11 (PGM)","s":["VV"],"k":"A","set":"Set 2"},{"t":"Sheng Xia Guang Nian","s":["Bird"],"k":"F#m","set":"Set 3"},{"t":"Wu Niang (PGM)","s":["VV"],"k":"E","set":"Set 3"},{"t":"Qi Tian Da Sheng (PGM)","s":["Jyang"],"k":"Ebm","set":"Set 3"},{"t":"San Tian San Ye","s":["VV"],"k":"G","set":"Set 3"},{"t":"Shuai dao fen shou","s":["Jyang"],"k":"Bb","set":"Set 3"},{"t":"Tai Yang Zhi Zi","s":["Bird"],"k":"Cm","set":"Set 3"},{"t":"Tian Kong Mei You Ji Xian","s":["VV"],"k":"B","set":"Set 4"},{"t":"Ai Cuo","s":["Bird"],"k":"B","set":"Set 4"},{"t":"Qing Tian","s":["Jyang"],"k":"F","set":"Set 4"},{"t":"Lei Hai","s":["VV"],"k":"D - Eb","set":"Set 4"},{"t":"Dao Xiang (Rock)","s":["Bird"],"k":"A","set":"Set 4"},{"t":"Li Kai Di Qiu Biao Mian (PGM)","s":["Jyang"],"k":"C","set":"Set 4"}]},"2026-05-03":{"singers":["Hoyee","Mindy"],"songs":[{"t":"Yi Bai Zhong Sheng Huo (PGM)","s":["Mindy"],"k":"B","set":"Set 1"},{"t":"Eyes Nose Lips (PGM)","s":["Hoyee"],"k":"Eb","set":"Set 1"},{"t":"Dian Qi Jiao Jian Ai (PGM)","s":["Mindy"],"k":"G","set":"Set 1"},{"t":"Zhi You (PGM)","s":["Mindy"],"k":"E","set":"Set 1"},{"t":"Dan Xiao Gui (PGM)","s":["Hoyee"],"k":"G","set":"Set 1"},{"t":"Ni Guang (PGM)","s":["Hoyee"],"k":"A","set":"Set 1"},{"t":"Ai Qing Zen Me Le Ma (PGM)","s":["Mindy"],"k":"C-Db","set":"Set 2"},{"t":"Xiao Ban (PGM)","s":["Mindy"],"k":"G","set":"Set 2"},{"t":"All I Ask (PGM)","s":["Mindy"],"k":"Eb-E","set":"Set 2"},{"t":"Li Li An (PGM)","s":["Hoyee"],"k":"G","set":"Set 2"},{"t":"Ji Fen Zhi Ji (PGM)","s":["Hoyee"],"k":"F","set":"Set 2"},{"t":"Ni Gan Bu Gan (PGM)","s":["Hoyee"],"k":"F#","set":"Set 2"},{"t":"Wo Ai Ni","s":["Mindy"],"k":"G","set":"Set 3"},{"t":"Ai Ai Ai (PGM)","s":["Hoyee"],"k":"E","set":"Set 3"},{"t":"Dao Xiang Rock (Sprite version)","s":["Mindy"],"k":"D","set":"Set 3"},{"t":"Fly Away (PGM)","s":["Hoyee"],"k":"C - Eb","set":"Set 3"},{"t":"Dance Monkey (PGM)","s":["Mindy"],"k":"F#m","set":"Set 3"},{"t":"Di Yi Tian (PGM)","s":["Hoyee","Mindy"],"k":"C","set":"Set 3"},{"t":"Last Dance (PGM)","s":["Mindy"],"k":"D-Eb","set":"Set 4"},{"t":"Ye Zi (PGM)","s":["Hoyee"],"k":"C","set":"Set 4"},{"t":"Lei Hai","s":["Mindy"],"k":"D","set":"Set 4"},{"t":"Wo Men De Ai (PGM)","s":["Hoyee"],"k":"Fmin","set":"Set 4"},{"t":"Ni Bu Shi Zhen Zheng De Kuai Le","s":["Mindy"],"k":"A","set":"Set 4"},{"t":"Xiao Qing Ge *V2 (PGM)","s":["Hoyee"],"k":"E","set":"Set 4"}]},"2026-05-04":{"singers":["Mac","Mini"],"songs":[{"t":"Bird Of Feather","s":["Mac"],"k":"Ab","set":"Set 1"},{"t":"Mo Te","s":["Mac"],"k":"Db","set":"Set 1"},{"t":"I'm Yours","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Bie Zhao Wo Ma Fan","s":["Mini"],"k":"C","set":"Set 1"},{"t":"Wu Mei Zi Jiang","s":["Mac"],"k":"Ab","set":"Set 1"},{"t":"Wo De Mi Mi","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Dai Wo Qu Zhao Ye Sheng Huo","s":["Mac","Mini"],"k":"C#","set":"Set 2"},{"t":"Shun","s":["Mac"],"k":"Ab","set":"Set 2"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Mini"],"k":"Eb","set":"Set 2"},{"t":"Yin Wei Ai Qing","s":["Mac","Mini"],"k":"F","set":"Set 2"},{"t":"Ji Mo Ji Mo Jiu Hao","s":["Mini"],"k":"Eb","set":"Set 2"},{"t":"Lose Control","s":["Mac"],"k":"F#","set":"Set 2"},{"t":"Gei Ni Yi Ping Mo Fa Yao Shui","s":["Mac","Mini"],"k":"Ori","set":"Set 3"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Qi Mei Di","s":["Mac"],"k":"Fm","set":"Set 3"},{"t":"Yang Guang Zai Nan","s":["Mini"],"k":"G","set":"Set 3"},{"t":"Shan Hai","s":["Mac"],"k":"Bm","set":"Set 3"},{"t":"Ai Ren Cuo Guo","s":["Mac","Mini"],"k":"Ori","set":"Set 3"},{"t":"Wo Ai Ni","s":["Mac"],"k":"Bbm","set":"Set 4"},{"t":"Dang Ni","s":["Mini"],"k":"Ori","set":"Set 4"},{"t":"Pu Tong Peng You","s":["Mac"],"k":"F","set":"Set 4"},{"t":"Ge Qian","s":["Mini"],"k":"F#","set":"Set 4"},{"t":"Ai Wo Bie Zou","s":["Mac"],"k":"C","set":"Set 4"},{"t":"Lei Hai","s":["Mini"],"k":"D","set":"Set 4"}]},"2026-05-05":{"singers":["Coen","Mini"],"songs":[{"t":"Pu Tong Peng You (PGM)","s":["Coen"],"k":"F","set":"Set 1"},{"t":"Te Bie De Ren","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Xia Tian De Feng","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Xie Yi Shou Ge","s":["Mini"],"k":"Eb","set":"Set 1"},{"t":"So Easy","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Kou (PGM)","s":["Mini"],"k":"F#","set":"Set 1"},{"t":"Yi Nian (PGM)","s":["Coen","Mini"],"k":"Dm","set":"Set 2"},{"t":"Jin Ji Lian Luo Ren (PGM)","s":["Coen"],"k":"G - Ab","set":"Set 2"},{"t":"PS Wo Ai Ni","s":["Mini"],"k":"G","set":"Set 2"},{"t":"Yin Wei Ai Qing","s":["Coen","Mini"],"k":"F","set":"Set 2"},{"t":"Ai Jiu Jian Ren Xin (PGM)","s":["Coen"],"k":"G#","set":"Set 2"},{"t":"Tian Xia You Qing Ren","s":["Coen","Mini"],"k":"A","set":"Set 2"},{"t":"Birds Of A Feather","s":["Coen"],"k":"Ab","set":"Set 3"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Bu Chao Bu Yong Hua Qian","s":["Coen"],"k":"C","set":"Set 3"},{"t":"Ai Ren Cuo Guo","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"San Tian San Ye","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Watermelon Sugar","s":["Coen"],"k":"C","set":"Set 4"},{"t":"Wo Hao Xiang Ni","s":["Mini"],"k":"Plus 3","set":"Set 4"},{"t":"Ni Man Wo Man","s":["Coen"],"k":"A","set":"Set 4"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Mini"],"k":"Eb","set":"Set 4"},{"t":"Dao Di Fa Shen Guo Shen Me Shi","s":["Coen"],"k":"B","set":"Set 4"},{"t":"Di Yi Tian (PGM)","s":["Mini"],"k":"C","set":"Set 4"}]},"2026-05-06":{"singers":["Alex","June"],"songs":[{"t":"If You (PGM)","s":["Alex"],"k":"C","set":"Set 1"},{"t":"Shun","s":["Alex"],"k":"Ab","set":"Set 1"},{"t":"Fei Ji Chang De 10:30 (PGM)","s":["June"],"k":"Ab","set":"Set 1"},{"t":"Te Bie De Ren","s":["June"],"k":"D","set":"Set 1"},{"t":"Qu Bei Ji Wang Ji Ni","s":["Alex"],"k":"G","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Kou (PGM)","s":["June"],"k":"F#","set":"Set 1"},{"t":"R&B All Night (PGM)","s":["June"],"k":"D","set":"Set 2"},{"t":"Golden Hour (PGM)","s":["Alex"],"k":"E","set":"Set 2"},{"t":"Xing Fu Zai Ge Chang (PGM)","s":["June"],"k":"A","set":"Set 2"},{"t":"Yi Ban Yi Ban","s":["Alex"],"k":"C#","set":"Set 2"},{"t":"Shui Xing Ji (PGM)","s":["June"],"k":"C","set":"Set 2"},{"t":"Hai Yu Ni (PGM)","s":["Alex"],"k":"E","set":"Set 2"},{"t":"Lonely Dance (PGM)","s":["Alex"],"k":"C#m","set":"Set 3"},{"t":"Jie Jie (PGM)","s":["June"],"k":"B","set":"Set 3"},{"t":"Uptown Funk (PGM)","s":["Alex"],"k":"Dm","set":"Set 3"},{"t":"San Tian San Ye (PGM)","s":["June"],"k":"F","set":"Set 3"},{"t":"Qi Lin (PGM)","s":["Alex"],"k":"F#m","set":"Set 3"},{"t":"Di Yi Tian (PGM)","s":["June"],"k":"C","set":"Set 3"},{"t":"Yi Lu Xiang Bei (PGM)","s":["Alex"],"k":"D","set":"Set 4"},{"t":"Ni Yao De Ai (PGM)","s":["June"],"k":"F","set":"Set 4"},{"t":"Zhuan Shu Tian Shi (PGM)","s":["Alex"],"k":"B","set":"Set 4"},{"t":"Zhi You (PGM)","s":["June"],"k":"E","set":"Set 4"},{"t":"Wo Hao Xiang Ni (PGM)","s":["Alex"],"k":"Ab","set":"Set 4"},{"t":"Long Juan Feng (PGM)","s":["June"],"k":"Db","set":"Set 4"}]},"2026-05-07":{"singers":["Hoyee","PDF","Sean"],"songs":[{"t":"Zi Yi Wei (PGM)","s":["Hoyee","Sean"],"k":"G","set":"Set 1"},{"t":"Jin Lang Man Chao Wen Xin (PGM)","s":["Sean"],"k":"Db","set":"Set 1"},{"t":"Guai Tian Qi (PGM)","s":["PDF","Sean"],"k":"A","set":"Set 1"},{"t":"If You (PGM)","s":["PDF"],"k":"B","set":"Set 1"},{"t":"Ai Wo De Shi Hou (PGM)","s":["Hoyee","Sean"],"k":"F#","set":"Set 1"},{"t":"Ai Ai Ai (PGM)","s":["Hoyee"],"k":"E","set":"Set 1"},{"t":"11 (PGM)","s":["PDF"],"k":"G","set":"Set 2"},{"t":"Zi Zi Ju Ju (PGM)","s":["Hoyee","Sean"],"k":"G - D","set":"Set 2"},{"t":"Yong Bei Ji Chang Qing Ge","s":["Sean"],"k":"Db","set":"Set 2"},{"t":"Ye Ren","s":["PDF"],"k":"F","set":"Set 2"},{"t":"Zhu Yu (PGM)","s":["Hoyee"],"k":"F","set":"Set 2"},{"t":"Zai Jia Na Gong He Guo Li Hun (PGM)","s":["Hoyee","Sean"],"k":"G","set":"Set 2"},{"t":"Nv Hai (PGM)","s":["Sean"],"k":"C#","set":"Set 3"},{"t":"Wo De Xin Yi (PGM)","s":["PDF"],"k":"Ori","set":"Set 3"},{"t":"Fly Away (PGM)","s":["Hoyee"],"k":"Eb","set":"Set 3"},{"t":"Ai Ren Cuo Guo (PGM)","s":["PDF","Hoyee","Sean"],"k":"Db","set":"Set 3"},{"t":"Gurenge (PGM)","s":["Hoyee"],"k":"G","set":"Set 3"},{"t":"Tai Yang Zhi Zi (PGM)","s":["PDF"],"k":"G","set":"Set 3"},{"t":"Xian Hua (PGM)","s":["PDF"],"k":"G","set":"Set 4"},{"t":"Xiao Qing Ge \"V2\" (PGM)","s":["Hoyee"],"k":"E","set":"Set 4"},{"t":"Shuo huang","s":["Sean"],"k":"Bb","set":"Set 4"},{"t":"Ni Yao De Ai","s":["PDF"],"k":"F","set":"Set 4"},{"t":"Wo Men De Ai (PGM)","s":["Hoyee"],"k":"Fmin","set":"Set 4"},{"t":"Wo Hai Shi Ai Zhe Ni (PGM)","s":["Sean"],"k":"B","set":"Set 4"}]},"2026-05-08":{"singers":["Jyang","Mindy","Vans","Zqames"],"songs":[{"t":"Circle Of Life (PGM)","s":["Zqames"],"k":"Bb","set":"Set 1"},{"t":"Ni Guang","s":["Zqames"],"k":"E","set":"Set 1"},{"t":"Zhi You (PGM)","s":["Mindy"],"k":"F","set":"Set 1"},{"t":"Ru Guo Ai Wang Le (PGM)","s":["Jyang","Mindy"],"k":"C","set":"Set 1"},{"t":"Ye Ren","s":["Vans"],"k":"D","set":"Set 1"},{"t":"Wu Kong (PGM)","s":["Vans"],"k":"Cm","set":"Set 1"},{"t":"Ting Ma Ma De Hua (PGM)","s":["Jyang"],"k":"Bb","set":"Set 2"},{"t":"Yue Ya Wan","s":["Mindy"],"k":"D","set":"Set 2"},{"t":"Yi Nian (PGM)","s":["Jyang","Mindy"],"k":"C#m","set":"Set 2"},{"t":"Ai Cuo","s":["Vans"],"k":"C","set":"Set 2"},{"t":"Si Le Dou Yao Ai","s":["Zqames"],"k":"Dm","set":"Set 2"},{"t":"Locked Out Of Heaven","s":["Zqames"],"k":"C","set":"Set 2"},{"t":"Xian Hua (PGM)","s":["Vans"],"k":"Eb","set":"Set 3"},{"t":"Uptown Funk (PGM)","s":["Zqames"],"k":"Cm","set":"Set 3"},{"t":"Dance Monkey (PGM)","s":["Mindy"],"k":"F#m","set":"Set 3"},{"t":"Tian Hei Qing Bi Yan (PGM)","s":["Jyang"],"k":"Bb","set":"Set 3"},{"t":"Qi Tian Da Sheng","s":["Jyang"],"k":"Ebm","set":"Set 3"},{"t":"Li Kai Di Qiu Biao Mian","s":["Vans"],"k":"D","set":"Set 3"},{"t":"Shu Le Ni Ying Le Shi Jie You Ru He","s":["Vans"],"k":"Eb","set":"Set 4"},{"t":"Ai Xiao De Yan Jing","s":["Mindy"],"k":"F#","set":"Set 4"},{"t":"Zhi Shi Tai Ai Ni (PGM)","s":["Jyang"],"k":"Bb","set":"Set 4"},{"t":"Lei Hai","s":["Zqames"],"k":"A","set":"Set 4"},{"t":"Ai Hen Jian Dan","s":["Vans"],"k":"C","set":"Set 4"},{"t":"Zi You","s":["Jyang"],"k":"F","set":"Set 4"}]},"2026-05-09":{"singers":["Bird","Jyang","VV"],"songs":[{"t":"Yi Lu Xiang Bei","s":["Bird"],"k":"D","set":"Set 1"},{"t":"Tian Hou","s":["Bird"],"k":"A","set":"Set 1"},{"t":"Ye Ren","s":["VV"],"k":"Ab","set":"Set 1"},{"t":"Duo Yuan Dou Yao Zai Yi Qi","s":["VV"],"k":"Eb - E","set":"Set 1"},{"t":"Shou Fang Kai (PGM)","s":["Jyang"],"k":"B","set":"Set 1"},{"t":"Li Bai ( PGM)","s":["Jyang"],"k":"C","set":"Set 1"},{"t":"Ting Ma Ma De Hua (PGM)","s":["Jyang"],"k":"Bb","set":"Set 2"},{"t":"Ting Shuo Ni","s":["VV"],"k":"C","set":"Set 2"},{"t":"Kan Zhe Wo De Yan Jing Shuo","s":["Bird"],"k":"A","set":"Set 2"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Jyang"],"k":"Ab","set":"Set 2"},{"t":"11 (PGM)","s":["VV"],"k":"A","set":"Set 2"},{"t":"Sheng Xia Guang Nian (PGM)","s":["Bird"],"k":"F#m","set":"Set 2"},{"t":"Xian Hua","s":["Bird"],"k":"Eb","set":"Set 3"},{"t":"Ri Bu Luo","s":["VV"],"k":"C#","set":"Set 3"},{"t":"Nv Hai (PGM)","s":["Jyang"],"k":"C#","set":"Set 3"},{"t":"Wu Niang (PGM)","s":["VV"],"k":"E","set":"Set 3"},{"t":"Shuang Jie Gun (PGM)","s":["Jyang"],"k":"A","set":"Set 3"},{"t":"Tai Yang Zhi Zi (PGM)","s":["Bird"],"k":"Cm","set":"Set 3"},{"t":"Lang Zi Hui Tou (PGM)","s":["Jyang"],"k":"C","set":"Set 4"},{"t":"Ting Jian Xia Yu De Sheng Yin","s":["VV"],"k":"Ab","set":"Set 4"},{"t":"Ai Cuo","s":["Bird"],"k":"B","set":"Set 4"},{"t":"Lei Hai","s":["VV"],"k":"D - Eb","set":"Set 4"},{"t":"Dao Xiang (Rock)","s":["Bird"],"k":"A","set":"Set 4"},{"t":"Li Kai Di Qiu Biao Mian (PGM)","s":["Jyang"],"k":"C","set":"Set 4"}]},"2026-05-10":{"singers":["Bryan","Mindy"],"songs":[{"t":"Ai Qing Zen Me Le Ma (PGM)","s":["Mindy"],"k":"C-Db","set":"Set 1"},{"t":"Dian Qi Jiao Jian Ai (PGM)","s":["Mindy"],"k":"G","set":"Set 1"},{"t":"Ni Bu Zhi Dao De Shi","s":["Bryan"],"k":"C#","set":"Set 1"},{"t":"Tian Tian","s":["Bryan"],"k":"C-C#","set":"Set 1"},{"t":"All I ask (PGM)","s":["Mindy"],"k":"Eb-E","set":"Set 1"},{"t":"Shu Le Ni Ying Le Shi Jie You Ru He","s":["Bryan"],"k":"E","set":"Set 1"},{"t":"Yu Ai","s":["Bryan"],"k":"B","set":"Set 2"},{"t":"Reflection (PGM)","s":["Mindy"],"k":"E","set":"Set 2"},{"t":"Ji Mo Xian Shen","s":["Bryan"],"k":"Ab","set":"Set 2"},{"t":"Zhi Shao Hai You Ni","s":["Mindy"],"k":"E","set":"Set 2"},{"t":"Versace On The Floor","s":["Mindy"],"k":"C#","set":"Set 2"},{"t":"Long Juan Feng","s":["Bryan"],"k":"A","set":"Set 2"},{"t":"Xian Hua","s":["Mindy"],"k":"G","set":"Set 3"},{"t":"Shan Hai","s":["Bryan"],"k":"Bm","set":"Set 3"},{"t":"Dao Xiang Rock (Sprite version)","s":["Mindy"],"k":"D","set":"Set 3"},{"t":"Shang Xin De Ren Bie Ting Man Ge","s":["Bryan"],"k":"Am","set":"Set 3"},{"t":"Dance Monkey (PGM)","s":["Mindy"],"k":"F#m","set":"Set 3"},{"t":"Li Bai","s":["Bryan"],"k":"C","set":"Set 3"},{"t":"Ai Cuo","s":["Bryan"],"k":"C#-Eb-E","set":"Set 4"},{"t":"Hei Se You Mo (PGM)","s":["Mindy"],"k":"Db","set":"Set 4"},{"t":"Ru Guo Ke Yi","s":["Bryan"],"k":"Eb","set":"Set 4"},{"t":"Zhi You (PGM)","s":["Mindy"],"k":"F-G","set":"Set 4"},{"t":"Qing Tian","s":["Bryan"],"k":"G","set":"Set 4"},{"t":"Ai Xiao De Yan Jing (PGM)","s":["Mindy"],"k":"F#","set":"Set 4"}]},"2026-05-11":{"singers":["Jess","Mini"],"songs":[{"t":"Xia Tian De Feng","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Jian Dan Ai","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Ko","s":["Jess"],"k":"G","set":"Set 1"},{"t":"Duo Yuan Dou Yao Zai Yi Qi","s":["Jess"],"k":"D - Eb","set":"Set 1"},{"t":"Yue Ya Wan","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Ni Guang","s":["Jess"],"k":"A - Bb","set":"Set 1"},{"t":"Shi Lian Wu Zui","s":["Jess"],"k":"G","set":"Set 2"},{"t":"Yu Ai","s":["Mini"],"k":"C#m","set":"Set 2"},{"t":"P.S. Wo Ai Ni","s":["Jess"],"k":"F#","set":"Set 2"},{"t":"Gei Wo Yi Ge Li You Wang Ji","s":["Mini"],"k":"Ori","set":"Set 2"},{"t":"Xin Fu Zai Ge Chang","s":["Jess"],"k":"A","set":"Set 2"},{"t":"Wo Huai Nian De","s":["Mini"],"k":"Ori","set":"Set 2"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Qi Mei Di","s":["Jess"],"k":"C","set":"Set 3"},{"t":"Yang Guang Zai Nan","s":["Mini"],"k":"G","set":"Set 3"},{"t":"Xi Huan Ni","s":["Jess"],"k":"E - F#","set":"Set 3"},{"t":"Di Yi Tian (PGM)","s":["Jess"],"k":"C","set":"Set 3"},{"t":"San Tian San Ye","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Lei Hai","s":["Mini"],"k":"D","set":"Set 4"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Jess"],"k":"Eb","set":"Set 4"},{"t":"Kai Shi Dong Le","s":["Mini"],"k":"B","set":"Set 4"},{"t":"Ren De Zhe Yi Shen","s":["Jess"],"k":"Eb - F","set":"Set 4"},{"t":"Wo Yao Kuai Le","s":["Mini"],"k":"G","set":"Set 4"},{"t":"Wo Hao Xiang Ni","s":["Jess"],"k":"C","set":"Set 4"}]},"2026-05-12":{"singers":["Coen","Mini"],"songs":[{"t":"Jin Ji Lian Luo Ren","s":["Coen"],"k":"G - Ab","set":"Set 1"},{"t":"Te Bie De Ren","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Xia Tian De Feng","s":["Mini"],"k":"D","set":"Set 1"},{"t":"Xie Yi Shou Ge","s":["Mini"],"k":"Eb","set":"Set 1"},{"t":"Ai Jiu Jian Ren Xin (PGM)","s":["Coen"],"k":"A","set":"Set 1"},{"t":"Ai Ni Dan Shuo Bu Chu Kou (PGM)","s":["Mini"],"k":"F#","set":"Set 1"},{"t":"Tian Xia You Qing Ren","s":["Coen","Mini"],"k":"A","set":"Set 2"},{"t":"Dian Qi Jiao Jian Ai","s":["Coen"],"k":"C#","set":"Set 2"},{"t":"PS Wo Ai Ni","s":["Mini"],"k":"G","set":"Set 2"},{"t":"Yi Nian (PGM)","s":["Coen","Mini"],"k":"Dm","set":"Set 2"},{"t":"Hai Yu Ni (PGM)","s":["Mini","Coen"],"k":"Ab","set":"Set 2"},{"t":"Qi Mei Di","s":["Coen"],"k":"G#","set":"Set 2"},{"t":"Watermelon Sugar","s":["Coen"],"k":"C","set":"Set 3"},{"t":"Ri Bu Luo","s":["Mini"],"k":"C#","set":"Set 3"},{"t":"Birds Of A Feather","s":["Coen"],"k":"Ab","set":"Set 3"},{"t":"Ai Ren Cuo Guo","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Bu Chao Bu Yong Hua Qian","s":["Coen"],"k":"C","set":"Set 3"},{"t":"San Tian San Ye","s":["Mini"],"k":"Ori","set":"Set 3"},{"t":"Pu Tong Peng You (PGM)","s":["Coen"],"k":"F","set":"Set 4"},{"t":"Yi Ge Ren Xiang Zhe Yi Ge Ren","s":["Mini"],"k":"Eb","set":"Set 4"},{"t":"Dao Di Fa Shen Guo Shen Me Shi","s":["Coen"],"k":"B","set":"Set 4"},{"t":"Lei Hai","s":["Mini"],"k":"D","set":"Set 4"},{"t":"Ni Man Wo Man","s":["Coen"],"k":"A","set":"Set 4"},{"t":"Tu Ran Hao Xiang Ni","s":["Mini"],"k":"Ab","set":"Set 4"}]}},"singers":{"Molly":["Ai Cuo","Ai De Chu Ti Yan","Ai De Jiu Shi Ni","Ai Ni","Ai Ren Cuo Guo","Ai Wo Bie Zou","Ai Ya Ai Ya","Ai Yao Tan Dang Dang","Dai Wo Zou","Dang Ni","Dao Xiang","Dui Deng Guan Xi","Gei Wo Yi Ge Li You Wang Ji","Guang Nian Zhi Wai","Hou Lai","Ni Yao De Ai","Piao Xiang Bei Fang","Qi Mei Di","Ri Bu Luo","Ru Yuan","Someone You Loved","Tiao Lou Ji","Ting Jian Xia Yu De Sheng Yin","Wo Huai Nian De","Wo Men De Ai","Wo Men De Ge","Yue Ya Wan","Zombie"],"Jack":["Ai Cuo","Ai Hen Jian Dan","Ai Ru Chao Shui","Ai Wo Hai Shi Ta","Bei Pan","Bie Wen Hen Ke Pa","Bu Chao Bu Yong Hua Qian","Chao Cao","Dui Deng Guan Xi","Hai Kuo Tian Kong","Hon Ri","Hong Ri","Mei Na Me Jian Dan","Piao Xiang Bei Fang","Pu Tong Peng You","Rang Wo Liu Zai Ni Sheng Bian","Sui Yue Ru Ge","Te Bie De Ren","Tiao Lou Ji","Tong Hua","Wo Men","Xiang Ni De Ye","Xiang Tai Duo","Xiu Lian Ai Qing","Yi Hou Bie Zuo Peng You","Yi Lu Xiang Bei","Yi Sheng Zhong Zui Ai","You Yi Chang Chun","Zhuan Shu Tian Shi"],"Hoyee":["A La Si Jia Hai Wan","A La Si Jia Hai Wan (PGM)","Ai Ai Ai","Ai Ai Ai (PGM)","Ai Cuo","Ai Ren Cuo Guo","Ai Ren Cuo Guo (PGM)","Ai Wo De Shi Hou (PGM)","Bang Bang","Dan Xiao Gui (PGM)","Di Yi Tian","Di Yi Tian (PGM)","Eight (PGM)","Eyes Nose Lips (PGM)","First Love (PGM)","Fly Away (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gei Wo Yi Ge Li You Wang Ji","Guo Le Ji Tian (PGM)","Gurenge (PGM)","Hao Bu Rong Yi","Hao Bu Rong Yi (PGM)","Ji Fen Zhi Ji","Ji Fen Zhi Ji (PGM)","Ji Mo Ji Mo Jiu Hao","Ji Mo Ji Mo Jiu Hao (PGM)","Ke Bu Le (PGM)","Last Dance (PGM)","Lei Hai","Li Li An (PGM)","Lian Ming Dai Xing (PGM)","Liu Xin Yu","Lv Guang (PGM)","Lydia (PGM)","Ni De Wei Xiao (PGM)","Ni Gan Bu Gan (PGM)","Ni Guang (PGM)","Ni Jiu Bu Yao Xiang Qi Wo","Ni Yao De Ai (PGM)","Qi Feng Le (PGM)","Ru Guo Ai Wang Le (PGM)","Ru Yan (PGM)","San Tian San Ye","Sheng Qi Bai Ma (PGM)","Shi Lian Wu Zui","Shi Luo Sha Zhou (PGM)","So Easy","Tou Qi (PGM)","Wo Bu Nan Guo","Wo Bu Nan Guo (PGM)","Wo Hao Xiang Ni","Wo Hao Xiang Ni (PGM)","Wo Huai Nian De","Wo Men De Ai (PGM)","Wo Yao Fei (PGM)","Wu Mian (PGM)","Wu Ren Zhi Xiao (PGM)","Xian Hua","Xiao Qing Ge","Xiao Qing Ge \"V2\" (PGM)","Xiao Qing Ge (PGM)","Xiao Qing Ge *V2 (PGM)","Xing Bu Liao Qing","Xing Chen Da Hai","Ye Zi (PGM)","Yong Gan (PGM)","Yong Qi (PGM)","You Yi Zhong Bei Shang (PGM)","Zai Jia Na Gong He Guo (PGM)","Zai Jia Na Gong He Guo Li Hun (PGM)","Zai Wo Nang Ye Bu Fu Qing Chun (PGM)","Zhen De Sha (PGM)","Zhu Yu (PGM)","Zi Yi Wei (PGM)","Zi You","Zi Zi Ju Ju (PGM)"],"Mac":["Ai Ren Cuo Guo","Ai Ren Cuo Guo (PGM)","Ai Wo Bie Zo","Ai Wo Bie Zou","Ai Wo Bie Zou (PGM)","Bird Of Feather","Dai Wo Qu Ye Sheng Huo","Dai Wo Qu Zhao Ye Shen Huo","Dai Wo Qu Zhao Ye Sheng Huo","Dao Xiang","Don't Look Back In Anger","Gei Ni Yi Ping Mo Fa Yao Shui","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gravity","Hao Bu Rong Yi","Hao Bu Rong Yi (PGM)","Hei Se Liu Ding","Hei Se Liu Ding (PGM)","Here With Me","Ji Fen Zhi Ji","Li Bai","Li Bai (PGM)","Lian Ren","Lose Control","Lover Boy","Mo Te","Nv Hai (PGM)","Pu Tong Peng You","Pu Tong Peng You (PGM)","Qi Mei Di","Qu Bei Ji Wang Ji Ni","Shan Hai","Shan Hai (PGM)","Shang Hai","Shape Of You","Shun","Slow Dancing In The Burning Room","Soft Spot","Wo Ai Ni","Wo Hai Nian Qing x2","Wu Mei Zi Jiang","Yin Wei Ai Qing","Zhong Yu Shuo Chu Ko","Zhong Yu Shuo Chu Ko (PGM)","Zu Gou"],"Zac":["A La Si Jia Hai Wan","Ai Hen Jian Dan","Ai Ren Cuo Guo","Dui Ni Ai Bu Wan","Fu Kua","Hai Kuo Tian Kong","Hu Ran Zhi Jian","Hui Se Gui Ji","Jiu Wang Le Ba","Kan Zhe Wo De Yan Jing Shuo","Lan Ni","Lang Zi Hui Tou","Li Kai Di Qiu Biao Mian","Lian Ai ING","Nan Ren KTV","Ni Man Wo Man","Qing Ren","Shui Xing Ji","Shuo Huang","Sui Yue Ru Ge","Tao Tai","Tiao Lou Ji","Xiang Zi You","You Xin Ren","Zhe Me Jin Na Me Yuan","Zhe Me Jing , Na Me Yuan","Zhong Ko Wei","Zi Ran Xin"],"VV":["11 (PGM)","Ai Ai Ai","Ai Cuo","Ai Ren Cuo Guo","Ai Ya Ai Ya","Ai Yao Tang Dang Dang","Bai Nian Gu Ji","Cao Jie Zhi","Dang Ni","Dao Shu","Dian Qi Jiao Jian Ai","Diao Le","Duo Yuan Do Yao Zai Yi Qi","Duo Yuan Do Yao Zaio Yi Qi","Duo Yuan Dou Yao Zai Yi Qi","Hon Qiang Wei Bai Mei Gui","Hu Er Jin Xia","Kai Men Jian Shan","Kai Men Jian Shan (PGM)","Kan Zhe Wo De Yan Jing Shuo","Lei Hai","Li Kai Di Qiu Biao Mian","Liang Liang","Long Juan Feng","Ni De Wei Xiao","Pao Mo","Ri Bu Luo","Ri Bu Luo (PGM)","Rolling In The Deep","Ru Guo Ke Yi","San Tian San Ye","Shan Bian","Sheng Qi Bai Ma (PGM)","Shi Lian Wu Zui","Tian Hou","Tian Kong Mei You Ji Xian","Ting Jian Xia Yu De Sheng Yin","Ting Shuo Ni","Ting shuo ni","Tui Hou","Wang Ji Yong Bao","Wei Ni Er Huo","Wo De Mi Mi","Wu Niang (PGM)","Xi Huan Ni","Yang Guang Zai Nan","Yang Guang Zai Nan (PGM)","Ye Ren","Ye ren","Yellow","Yi Lu Xiang Bei","Yi Wan Chi Bei Shang","Yi Wan Chi Bei Shang（Live）","Yu Ai","Yue Ya Wan","Yue Ya Wan (PGM)","Zhao Zi Ji","Zui Chang De Dian Yin","Zui Hou Yi Ye","Zui Hou Yi Ye (PGM)"],"Mini":["Ai Ni","Ai Ni Dan Shuo Bu Chu Ko","Ai Ni Dan Shuo Bu Chu Ko (PGM)","Ai Ni Dan Shuo Bu Chu Kou (PGM)","Ai Ren Cuo Guo","Bie Zhao Wo Ma Fan","Dai Wo Qu Ye Sheng Huo","Dai Wo Qu Zhao Ye Sheng Huo","Dance Monkey","Dang Ni","Di Yi Tian","Di Yi Tian (PGM)","Diao Le","E Lang Chuan Shuo","Ge Qian","Gei Ni Yi Ping Mo FA Yao Shui (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gei Wo Yi Ge Li You Wang Ji","Gei Wo Yi Gei Li You Wang Ji","Hai Yu Ni (PGM)","I'm Yours","Ji Mo Ji Mo Jiu Hao","Jian Dan Ai","Ka fei  咖啡","Kai Bu Liao Kou","Kai Shi Dong Le","Kuan Shu (PGM)","Lei Hai","Li Kai Wo De Yi Lai","Meng Zhong Ren","Ni shi wo de wei yi 你是我的唯一","PS Wo Ai Ni","Ri Bu Luo","Ru Guo Ni Ye Ting Shuo","Ru Yuan","San Tian San Ye","Tai Yang","Tian Xia You Qing Ren","Tu Ran Hao Xiang Ni","Wo De Mi Mi","Wo Hao Xiang Ni","Wo Huai Nian De","Wo Yao Kuai Le","Xia Tian De Feng","Xie Yi Shou Ge","Xiu Lian Ai Qing","Yang Guang Zai Nan","Yang guang zai nan  阳光宅男","Yi Ge Ren Xiang Zhe Yi Ge Ren","Yi Nian (PGM)","Yin Wei Ai Qing","Yin Xin De Chi Ban","Ying Xing De Chi Ban","Yu Ai","Yue Ya Wan","Yue Ya Wan (PGM)","Zi Zi Ju Ju","Zi you 自由"],"Gin":["APT","Ai Hen Jian Dan","Ai Ren Cuo Guo","Bad Guy","Best Part","Dai Wo Qu Zhao Ye Sheng Huo","Dao Dai","Domino","Don't Start Now","Gu Yong Ze","Guang Nian Zhi Wai","Jie Tuo","Kai Shi Dong Le","Li Bai","Long Juan Feng","Move Like Jagger","Ni Yao De Ai","Price Tag","Qing Tian","R&B All Night","Ru Guo Ni Ye Ting Shuo","Te Bie De Ren","Thinking Out Loud","Tian Hou","Versace On The Floor","Wo Hao Xiang Ni","Wu Mei Zi Jiang","Xiao Xin Yun","Yan Yuan","Yu Ai","Zhi Shao Hai You Ni","Zhi Shi Tai Ai Ni"],"Sean":["Ai Ren Cuo Guo (PGM)","Ai Shang Ni Suan Wo Jian","Ai Wo De Shi Hou (PGM)","Bie Wen Hen Ke Pa (PGM)","Gei Ni Yi Ping Mo FA Yao Shui (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Gei Wo Yi Shou Ge De Shi Jian (PGM)","Guai Tian Qi (PGM)","Guo Le Ji Tian (PGM)","Hai Shi Hui (PGM)","Hei Se Liu Ding (PGM)","Hui Dao Guo Qu (PGM)","Jin Ji Lian Luo Ren (PGM)","Jin Lang Man Chao Wen Xin (PGM)","Jing Ji Lian Luo Ren (PGM)","Jing Lang Man Chao Wen Xin (PGM)","Kuan Shu (PGM)","Lang Fei (PGM)","Lian Ai ING","Liu Sha (PGM)","Mi Gong (PGM)","Nv Hai (PGM)","Pu Tong Peng You (PGM)","Qing Tian","Qu Bei Ji Wang Ji Ni","Ren Sheng Qi Qi Luo Luo Luo Lou (PGM)","Ru Guo Ai Wang Le (PGM)","Sha Zi (PGM)","Shu Qing Ge (PGM)","Shun","Shuo Huang (PGM)","Shuo huang","Tai Yang Yu Di Qiu","Tian Hei Hei (PGM)","Tian Hei Qing Bi Yan (PGM)","Wo Hai Shi Ai Zhe Ni (PGM)","Wo Luo Lei Qing Cu Ling Sui (PGM)","Wo Luo Lei Qing Xu Ling Sui (PGM)","Xiao Zhen Gu Nian (PGM)","Xiao Zhen Gu Niang (PGM)","Yi Hou Bie Zuo Peng You (PGM)","Yong Bei Ji Chang Qing Ge","You Yi Chang Chun (PGM)","Zai Jia Na Gong He Guo (PGM)","Zai Jia Na Gong He Guo Li Hun (PGM)","Zi Ran Xing (PGM)","Zi Yi Wei (PGM)","Zi Zi Ju Ju (PGM)"],"Katie":["Ai Ni Dan Shuo Bu Chu Ko (PGM)","Da Ge","Gei Ni Yi Ping Mo FA Yao Shui (PGM)","Gei Ni Yi Ping Mo Fa Yao Shui (PGM)","Ke Zai Wo Xing Di De Ming Zhi","Ru Guo Ke Yi","Tai Yang Yu Di Qiu","Te Bie De Ren","Wei Yi","Xi Tie Jie","Xing Qing","Yang Guang Zai Nan","Yang Guang Zai Nan (PGM)"],"Rice":["Ni Guang","Ni Yao De Ai","Ning meng cao de wei dao","Te bie de ren","Tian hou","Wo Bu nan guo","Wo yao kuai le"],"PDF Tong":["APT","Ai Ni","Ai Ren Cuo Guo","Ai Ren Cuo Guo (PGM)","Ai Wo Bie Zou","Cha Bu Duo De Gu Nian (PGM)","Da Feng Chui","Dai Wo Zou","Dang Ni","Dao Dai","Duo Yuan Dou Yao Zai Yi Qi","Eyes Nose Lips","Guai Mei De (PGM)","Guai Mei Di ( PGM )","Guai Tian Qi (PGM)","Gurenge","Long","Long Juan Feng","Mei Gui Shao Nian ( PGM )","Mei Gui Shao Nian (PGM)","Neng Yu Jian Jiu Hen Bu Cuo Le","Ni Guang","Qing Tian","Shuai Dai Fen Shou (PGM)","Shuai Dao Fen Shou","Shuai Dao Fen Shou (PGM)","Tai Yang Zhi Zi (PGM)","Wei Yi","Wo De Hua Ban Xie (PGM)","Wo De Xin Yi ( PGM )","Wo De Xin Yi (PGM)","Xian Hua","Xiang He Ni Kan Wu Yue De Wan Xia","Yang Guang Zai Nan","Ye Ren","Yi Lu Xiang Bei","Yong Qi"],"Bird":["Ai Cuo","Ai Ren Cuo Guo","Ai Wo Hai Shi Ta","Bu Ai Wo Jiu La Dao","Bu Neng Shuo De Mi Mi","Bu Wei Shui Er Zuo De Ge","Cao Chao","Chao Cao","Dao Xiang (Rock)","Fen Shou Ba","Ge Qian","He Qian","Hou Lai De Wo Men","It's My Life","It's my life","Kan Zhe Wo De Yan Jing Shuo","Li Bai","Li Bai (PGM)","Li Kai Di Qiu Biao Mian","Lian Ai ING","Mo Ban Che","Ni Shi Wo De Yan","Pai Dui Dong Wu","Rang Wo Liu Zai Ni Sheng Bian","Rang Wo Liu Zai Ni Sheng Bian (PGM)","Rang Wo Liu Zai Wo Sheng Bian (PGM)","Shang XIn De Ren Bie Ting Man Ge","Shang Xin De Ren Bie Ting Man Ge","Sheng Xia Guang Nian","Sheng Xia Guang Nian (PGM)","Shuai Dao Fen Shou","Tai Yang Zhi Zi","Tai Yang Zhi Zi (PGM)","Tian Hou","Tu Ran Hao Xiang Ni","Wang Fei","Wen Rou","Wo Shi Fen Nu","Xian Hua","Yang Guang Zai Nan","Yi Lu Xiang Bei","Yi Lu Xiang Bei (PGM)"],"Cassy":["Ai Ren Cuo Guo","Cai Hong","Cong Qian Shuo","Dang Ni","Diao Le","Hou Lai","Jiu Rang Zhe Da Yu Luo Xia","Long","Mei Li Kai Guo","Mo","Ru Yuan","Tiao Lou Ji","Wo Hao Xiang Ni","Zi You"],"Zqames":["Bad Romance","Bang Bang","Circle Of Life (PGM)","Creep","Die With A Smile","Hei Se Liu Ding","Hei Se Liu Ding (PGM)","Hei Se You Mo","I Will Survive","If I Ain't Got You","Lei Hai","Locked Out Of Heaven","Locked out of heaven","Love The Way You Lie","Ni Guang","Ni Shi Wo De Yan","Ni Yao De Ai","Qing Tian","Rolling In The Deep","Shang Xin De Ren Bie Ting Man Ge","Si Le Do Yao Ai","Si Le Dou Yao Ai","Sunday Morning","Ting Hai","Uptown Funk","Uptown Funk (PGM)","Wang Fei","Wo Men De Ai","Yang Chong","Yang Cong"],"Danz":["Au Cuo","Neng Yu Jian Jiu Hen Bu Cuo Le","Ni Man Wo Man","Pu Tong Peng You","Rang Wo Liu Zai Ni Sheng Bian","Shan Hai","Te Bie De Ren"],"Stephie":["Ai ai ai","Bai Nian Gu Ji","Begging","Da Ge","Duo Yuan Dou Yao Zai Yi Qi","Jue Ai","Ni Guang","Qi Mei Di","Rolling In The Deep","Tian Hou","Ting Jian Xia Yu De Sheng Yin","Treasure"],"Skipper":["Di Yi Tian","Guang Nian Zhi Wai","Kun Zhu ( PGM )","Ni Bu Shi Zhen Zheng De Kuai Le","Ni Man Wo Man","San Tian San Ye","Tiao Lou Ji","Wo De Xin Yi ( PGM )","Wo Yao Kuai Le","Yue Ya Wan"],"Jess":["Ai Ai Ai","Ai Cuo","Ai Ni Dan Shuo Bu Chu Ko","Di Yi Tian (PGM)","Duo Yuan Dou Yao Zai Yi Qi","Lei Hai","Ni A Ni A","Ni Guang","P.S. Wo Ai Ni","Qi Mei Di","Rang Wo Liu Zai Ni Sheng Bian","Ren De Zhe Yi Shen","Shi Lian Wu Zui","Shuai Dao Fen Shou","Tian Hou","Wei Yi","Wo Hao Xiang Ni","Xi Huan Ni","Xin Fu Zai Ge Chang","Yi Ge Ren Xiang Zhe Yi Ge Ren","Zi You"],"Lenny":["Ai De Jiu Shi Ni","Ai Wo Bie Zou","Ai Wo Hai Shi Ta","Beggin","Bei Ji Xing De Yan Lei","Cao Jie Zhi","Chao Cao","Dont Look Back In Anger","Feeling Good","Kan Zhe Wo De Yan Jing Shuo","Kiss Goodbye","Lei Hai","Li Bai","Li Kai Di Qiu Biao Mian","Liang Liang","Lose Control","Lover Boy","Messy","R&B All Night","San Ren You","Shan Hai","Shuai Dao Fen Shou","Shun","Ta Bu Ai Wo","Tian Hou","Too Good At Goodbye","Too Good At Goodbyes","Wang Fei","Wo Hao Xiang Ni","Xiang Tai Duo","Xing Fu Mo Tian Lun","Zi You"],"Andre":["Ai Cuo","Ai Ren Cuo Guo","Golden Hour","Lose Control","Na Xie Ni Hen Mao Xian De Meng","Shu Le Ni Ying Le Shi Jie You Ru He","Sugar","Te Bie De Ren","Tu Ran Hao Xiang Ni","Versace On The Floor","When I Was Your Man","Wo Huai Nian De"],"Angeline":["Ai Ni","Bai Nian Gu Ji","Ni Man Wo Man","Tian Hou","Xia Yu Tian","Ye Zi","Yue Ya Wan","Zhi You"],"Vans":["Ai Cuo","Ai Hen Jian Dan","Forever Love (PGM)","Gu Yong Ze (PGM)","Lei Hai","Li Ge","Li Kai Di Qiu Biao Mian","Lian Ai ING","Piao Xiang Bei Fang","Shang Xing De Ren Bie Ting Man Ge","Shu Le Ni Ying Le Shi Jie You Ru He","Si Le Do Yao Ai","Wang Fei","Wu Kong","Wu Kong (PGM)","Xian Hua","Xian Hua (PGM)","Ye Ren","Yi Lu Xiang Bei"],"Spell":["Don't Start Now","Hei Se Liu Ding","Ling Chen San Dian Zhong","Ni Yao De Ai","Tao Tai","Yellow","You Mei You"],"Jyang":["Ai Si Ni (PGM)","Ai Wo Bie Zou","An Jing (PGM)","Bu Xiang Shang Ban (PGM)","Colourful (PGM)","Fly Out (PGM)","Gan Xie Ni Ceng Lai Guo (PGM)","Gan Xie Ni Chen Lai Guo (PGM)","Hei Se Liu Ding (PGM)","Kai Bu Liao Kou (PGM)","Kan Zhe Wo De Yan Jing Shuo","Lang Zi Hui Tou (PGM)","Li Bai ( PGM)","Li Kai Di Qiu Biao Mian","Li Kai Di Qiu Biao Mian (PGM)","Neng Yu Jian Jiu Hen Bu Cuo Le (PGM)","Ni Hai Yao Wo Zen Yang (PGM)","Ni Ming De Hao You (PGM)","Ni Yao De Ai","Nv Hai (PGM)","Qi Tian Da Sheng","Qi Tian Da Sheng (PGM)","Qing Tian","Rang Wo Wei Ni Chang Qing Ge (PGM)","Ru Guo Ai Wang Le (PGM)","Ru Guo Na Tong Dian Hua You Jie Tong (PGM)","Ruo Yue Liang Mei Lai (PGM)","Shan Hai (PGM)","Shou Fang Kai (PGM)","Shuai dao fen shou","Shuang Jie Gun (PGM)","Shuo Huang (PGM)","Tian Hei Qing Bi Yan (PGM)","Tian Hou (PGM)","Ting Ma Ma De Hua (PGM)","Wang Zi De Xin Yi (PGM)","Wo De Mai Ke Feng (PGM)","Wu Le Bu Zuo (PGM)","Xiang Tai Duo (PGM)","Yang Guang Zhai Nan (PGM)","Yi Fu Zhi Ming (PGM)","Yi Ge Ren Xiang Zhe Yi Ge Ren","Yi Nian (PGM)","Zhi Shi Tai Ai Ni (PGM)","Zi You","Zi you 自由","Zu Gou","Zui Hou Yi Ye (PGM)"],"Mindy":["8.0","A Er Zi Hai Mo De Ai (PGM)","Ai Qing Zen Me Le Ma (PGM)","Ai Shang Ni Deng Yu Ai Shang Ji Mo (PGM)","Ai Si Ni (PGM)","Ai Xiao De Yan Jing","Ai Xiao De Yan Jing (PGM)","All I Ask (PGM)","All I ask (PGM)","Chao Kuai Gan (PGM)","Chou Ba Guai (PGM)","Dance Monkey","Dance Monkey (PGM)","Dao Xiang (Rock)","Dao Xiang Rock (Sprite version)","Di Yi Tian (PGM)","Dian Qi Jiao Jian Ai (PGM)","Gan Xie Ni Ceng Lai Guo (PGM)","Gan Xie Ni Chen Lai Guo (PGM)","Gu Ji Gu Ji (PGM)","Guan Jian Chi (PGM)","Hei Se You Mo (PGM)","Last Dance (PGM)","Lei Hai","Meng Zhong Ren (PGM)","Ni Bu Shi Zhen Zheng De Kuai Le","Ni Yao De Ai","Ni Yao De Ai (PGM)","Reflection (PGM)","Ri Bu Luo","Ru Guo Ai Wang Le (PGM)","Ru Guo Mei You Ni (PGM)","Ru Yuan (PGM)","Ruo Yue Liang Mei Lai (PGM)","Tong Hua Shun (PGM)","Versace On The Floor","Wo Ai Ni","Wo Hai Mei You Zuo Hao Bei Da Dao De Zhun Bei (PGM)","Xian Hua","Xian Hua (PGM)","Xiao Ban (PGM)","Yi Bai Zhong Sheng Huo (PGM)","Yi Nian (PGM)","Yue Ya Wan","Zhi Shao Hai You Ni","Zhi You (PGM)","Zi you"],"Bryan":["Ai Cuo","Ai Ren Cuo Guo","Chou Ba Guai","Hao Bu Rong Yi","Ji Mo Xian Shen","Ji Mo Xian Sheng","Li Bai","Long Juan Feng","Ni Bu Zhi Dao De Shi","Pu Tong Peng You","Qing Tian","Ru Guo Ke Yi","Shan Hai","Shang Xin De Ren Bie Ting Man Ge","Shu Le Ni Ying Le Shi Jie You Ru He","Shu Le Ni Ying Le Shi Jie You Ru He (PGM)","Tian Kong Mei You Ji Xian","Tian Tian","Tu Ran Hao Xiang Ni","Wo Hao Xiang Ni","Xi Huan Ni","Xia Yu Tian","Yu Ai","Zhao Zi Ji"],"Alex":["Beggin","Golden Hour (PGM)","Hai Yu Ni (PGM)","Hou Lai De Wo Men","If You","If You (PGM)","Li Bai (PGM)","Lonely Dance (PGM)","Mi Gong","Qi Lin (PGM)","Qu Bei Ji Wang Ji Ni","Ru Guo Wo Bian Cheng Hui Yi","Shun","Te Bie De Ren","Tu Ran Hao Xiang Ni","Tuo Fei Lun","Uptown Funk","Uptown Funk (PGM)","Wo Hao Xiang Ni (PGM)","Xian Hua","Xian Hua (PGM)","Yi Ban Yi Ban","Yi Lu Xiang Bei","Yi Lu Xiang Bei (PGM)","Zhuan Shu Tian Shi (PGM)"],"June":["Ai Ni Dan Shuo Bu Chu Ko (PGM)","Ai Ni Dan Shuo Bu Chu Kou (PGM)","Bai Nian Gu Ji (PGM)","Born This Way (PGM)","Di Yi Tian (PGM)","Fei Ji Chang De 10:30 (PGM)","Jie Jie (PGM)","Jie Mei (PGM)","Jie Shou (PGM)","Kao Jin (PGM)","Long Juan Feng (PGM)","Love Song (PGM)","Man Leng (PGM)","Ni Yao De Ai (PGM)","R&B All Night (PGM)","San Tian San Ye (PGM)","Shui Xing Ji (PGM)","Si Nian Shi Yi Zhong Bing (PGM)","Te Bie De Ren","Tian Tian (PGM)","Ting Jian Xia Yu De Sheng Yin (PGM)","Wei Yi (PGM)","Xing Fu Zai Ge Chang (PGM)","Xing Zou De Yu (PGM)","Zhi You (PGM)"],"PDF":["11 (PGM)","Ai Ren Cuo Guo (PGM)","Cha Bu Duo De Gu Niang (PGM)","Guai Tian Qi (PGM)","Gurenge (PGM)","If You (PGM)","Mei Gui Shao Nian (PGM)","Ni Yao De Ai","Qi Lin (PGM)","Shuai Dao Fen Shou (PGM)","Tai Yang Zhi Zi (PGM)","Ting Jian Xia Yu De Sheng Yin (PGM)","Wei Yi","Wo De Xin Yi (PGM)","Xian Hua","Xian Hua (PGM)","Xiang He Ni Kan Wu Yue De Wan Xia","Ye Ren","Yi Lu Xiang Bei","Yi Lu Xiang Bei (PGM)","Zai Jia Na Gong He Guo Li Hun (PGM)"],"Coen":["Ai Jiu Jian Ren Xin (PGM)","Best Part","Birds Of A Feather","Bu Chao Bu Yong Hua Qian","Dao Di Fa Shen Guo Shen Me Shi","Dian Qi Jiao Jian Ai","Hai Yu Ni (PGM)","I Will Survive","I'll Survive","Jin Ji Lian Luo Ren","Jin Ji Lian Luo Ren (PGM)","Long Juan Feng","Mi Gong","Ni Man Wo Man","Pu Tong Peng You","Pu Tong Peng You (PGM)","Qi Mei Di","Shui Yue Ru Ge","So Easy","Sui Yue Ru Ge","Te Bie De Ren","Tian Xia You Qing Ren","Tong Hua Shun","Watermelon Sugar","Xiang Yi Wei Ming","Yi Nian (PGM)","Yin Wei Ai Qing","Zhong Sheng Mei Li"],"Kopi":["Ai Cuo","Ai Shang Ni Suan Wo Jian","Ai Wo Bie Zo","Na Li Dou Shi Ni","Shan Hai","Shu Qing Ge","Shun","Tian Tian"]}};
+
+// ─── State ───
+let selected = [];
+let todayStr = '';
+let todayData = null;
+
+// ─── Init ───
+(function init() {
+  const d = DATE_OVERRIDE || new Date().toISOString().slice(0,10);
+  todayStr = d;
+  const parts = d.split('-');
+  const dateObj = new Date(+parts[0], +parts[1]-1, +parts[2]);
+  document.getElementById('hdr-date').textContent =
+    dateObj.toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
+
+  const info = TP_DATA.schedule[d];
+  if (!info || !info.singers.length) {
+    document.getElementById('songs-wrap').innerHTML =
+      '<div class="no-show"><div class="icon">🎵</div><div class="msg">今天暂无演出安排<br>如有疑问请联系场务</div></div>';
+    document.getElementById('footer').style.display = 'none';
+    document.getElementById('perf-strip').style.display = 'none';
+    return;
+  }
+  todayData = info;
+
+  // Performers
+  document.getElementById('perf-strip').innerHTML =
+    info.singers.map(s => `<div class="p-chip"><div class="dot"></div>${h(s)}</div>`).join('');
+
+  // Group songs by singer
+  const bySinger = {};
+  info.songs.forEach(song => {
+    const singerKey = song.s.join(' & ');
+    if (!bySinger[singerKey]) bySinger[singerKey] = [];
+    if (!bySinger[singerKey].find(x => x.t === song.t))
+      bySinger[singerKey].push(song);
+  });
+
+  // Render
+  document.getElementById('songs-wrap').innerHTML =
+    Object.entries(bySinger).map(([singer, songs]) => `
+      <div class="sec-label">${h(singer)}</div>
+      <div class="songs-grid">
+        ${songs.map(song => {
+          const id = 'c_' + btoa(encodeURIComponent(song.t + '|' + singer)).replace(/[^a-zA-Z0-9]/g,'_');
+          return `<div class="song-card" id="${id}" data-t="${h(song.t)}" data-s="${h(singer)}" onclick="toggle(this)">
+            <div class="chk">✓</div>
+            <div class="s-tag">${h(singer)}</div>
+            <div class="s-title">${h(song.t)}</div>
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+})();
+
+// ─── Toggle song ───
+function toggle(el) {
+  const key = el.dataset.t + '|||' + el.dataset.s;
+  const idx = selected.findIndex(s => s.key === key);
+  if (idx >= 0) {
+    selected.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    if (selected.length >= 5) {
+      el.animate([{borderColor:'#E8621A'},{borderColor:''}], {duration:400});
+      return;
+    }
+    selected.push({ key, title: el.dataset.t, singer: el.dataset.s });
+    el.classList.add('selected');
+  }
+  const full = selected.length >= 5;
+  document.querySelectorAll('.song-card:not(.selected)').forEach(c => c.classList.toggle('dimmed', full));
+  updateUI();
+}
+
+function updateUI() {
+  const n = selected.length;
+  const pill = document.getElementById('pill');
+  pill.textContent = n + ' / 5';
+  pill.className = 'pill' + (n >= 5 ? ' full' : n > 0 ? ' has-sel' : '');
+  const btn = document.getElementById('sub-btn');
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? '请先选择歌曲' : `提交我的选择（${n}/5）→`;
+}
+
+// ─── Submit ───
+async function submitVote() {
+  if (!selected.length) return;
+  const btn = document.getElementById('sub-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 提交中...';
+
+  const payload = {
+    date: todayStr,
+    votes: selected.map(s => ({ title: s.title, singer: s.singer })),
+    ts: Date.now()
+  };
+
+  // Try sending to Apps Script endpoint
+  const sent = await trySend(payload);
+
+  // Also always save locally as fallback
+  const lsKey = 'tangping_votes_' + todayStr;
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem(lsKey) || '{}'); } catch(e) {}
+  selected.forEach(s => { local[s.key] = (local[s.key] || 0) + 1; });
+  localStorage.setItem(lsKey, JSON.stringify(local));
+
+  showThanks();
+}
+
+async function trySend(payload) {
+  if (!VOTE_ENDPOINT || VOTE_ENDPOINT === 'YOUR_APPS_SCRIPT_URL_HERE') return false;
+  try {
+    await fetch(VOTE_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+// ─── Thanks screen ───
+function showThanks() {
+  document.getElementById('ty-picks').innerHTML =
+    selected.map(s => `<div class="ty-pick">🎵 ${h(s.title)}</div>`).join('');
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('thanks').style.display = 'flex';
+
+  let secs = 8;
+  const timer = document.getElementById('ty-timer');
+  const iv = setInterval(() => {
+    secs--;
+    timer.textContent = secs + ' 秒后重置给下一位';
+    if (secs <= 0) { clearInterval(iv); reset(); }
+  }, 1000);
+}
+
+function reset() {
+  selected = [];
+  document.querySelectorAll('.song-card').forEach(c => c.classList.remove('selected','dimmed'));
+  updateUI();
+  document.getElementById('main').style.display = '';
+  document.getElementById('footer').style.display = '';
+  document.getElementById('thanks').style.display = 'none';
+}
+
+function h(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
