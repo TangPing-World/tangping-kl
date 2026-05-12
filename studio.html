@@ -375,6 +375,7 @@
   <button class="tab active" id="tab-btn-trends" onclick="showTab('trends')">🔥 本周热点</button>
   <button class="tab" id="tab-btn-generate" onclick="showTab('generate')">✍️ 生成内容</button>
   <button class="tab" id="tab-btn-songvote" onclick="showTab('songvote')">🎵 点歌系统</button>
+  <button class="tab" id="tab-btn-schedule" onclick="showTab('schedule')">📅 排班管理</button>
   <button class="tab" id="tab-btn-guide" onclick="showTab('guide')">📋 使用指南</button>
 </div>
 
@@ -602,6 +603,42 @@
     </div>
   </div>
 
+  <!-- ══════════ 排班管理 TAB ══════════ -->
+  <div id="tab-schedule" style="display:none;">
+
+    <!-- 添加/编辑排班 -->
+    <div class="card">
+      <div class="trend-header-row">
+        <div class="trend-title">📅 添加演出排班</div>
+        <div class="trend-date">保存后即时生效，无需重新上传网站</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-bottom:16px;">
+        <div>
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">演出日期</label>
+          <input type="date" id="sch-date" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);" />
+        </div>
+        <button class="btn-primary" onclick="schSave()" id="sch-save-btn" style="height:42px;padding:0 20px;">💾 保存</button>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:10px;">今晚上台歌手（可多选）</label>
+        <div id="sch-singer-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"></div>
+      </div>
+      <div id="sch-save-msg" style="margin-top:12px;font-size:13px;display:none;"></div>
+    </div>
+
+    <!-- 已保存排班列表 -->
+    <div class="card">
+      <div class="trend-header-row">
+        <div class="trend-title">📋 已保存排班</div>
+        <button class="btn-refresh" onclick="schLoadList()">↻ 刷新</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">以下日期已保存到 Google Sheet，投票页会自动读取。已内置在程序中的历史日期无需重复添加。</div>
+      <div id="sch-list">
+        <div style="color:var(--muted);text-align:center;padding:20px;font-size:13px;">加载中...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════ 使用指南 TAB ══════════ -->
   <div id="tab-guide" style="display:none;">
     <div class="guide-card">
@@ -725,11 +762,12 @@ let prefillData = null;
 
 // ─── Tabs ───
 function showTab(tab) {
-  ['trends','generate','guide','songvote'].forEach(t => {
+  ['trends','generate','guide','songvote','schedule'].forEach(t => {
     document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
     document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'songvote') svInit();
+  if (tab === 'schedule') schInit();
 }
 
 // ─── Trends ───
@@ -1617,6 +1655,119 @@ function svCopySetlist() {
 }
 
 // svInit is called from showTab above when songvote tab is opened
+
+// ══════════════════════════════════════════════
+// ─── Schedule Manager ───
+// ══════════════════════════════════════════════
+let schInited = false;
+
+function schInit() {
+  if (!schInited) {
+    schInited = true;
+    // Populate singer checkboxes from TP_DATA
+    const singers = Object.keys(TP_DATA.singers || {}).sort();
+    const grid = document.getElementById('sch-singer-grid');
+    grid.innerHTML = singers.map(s => `
+      <label style="display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;user-select:none;" id="sch-lbl-${CSS.escape(s)}">
+        <input type="checkbox" value="${escHtml(s)}" class="sch-singer-cb" style="accent-color:var(--primary);">
+        ${escHtml(s)}
+      </label>`).join('');
+    // Default date = tomorrow
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('sch-date').value = tomorrow.toISOString().slice(0,10);
+  }
+  schLoadList();
+}
+
+async function schSave() {
+  const date = document.getElementById('sch-date').value;
+  const singers = [...document.querySelectorAll('.sch-singer-cb:checked')].map(cb => cb.value);
+  const msg = document.getElementById('sch-save-msg');
+  const btn = document.getElementById('sch-save-btn');
+
+  if (!date) { schMsg('⚠️ 请选择日期', '#DC2626'); return; }
+  if (!singers.length) { schMsg('⚠️ 请至少选择一位歌手', '#DC2626'); return; }
+
+  btn.disabled = true; btn.textContent = '保存中...';
+  try {
+    const res = await fetch(SV_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'addSchedule', date, singers }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      schMsg('✅ ' + date + ' 排班已保存（' + singers.join('、') + '）', '#059669');
+      schLoadList();
+      // Uncheck all
+      document.querySelectorAll('.sch-singer-cb').forEach(cb => cb.checked = false);
+    } else {
+      schMsg('❌ 保存失败：' + (json.error || '未知错误'), '#DC2626');
+    }
+  } catch(e) {
+    schMsg('❌ 网络错误：' + e.message, '#DC2626');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 保存';
+  }
+}
+
+async function schDelete(date) {
+  if (!confirm('确认删除 ' + date + ' 的排班？')) return;
+  try {
+    const res = await fetch(SV_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'deleteSchedule', date }),
+    });
+    const json = await res.json();
+    if (json.ok) schLoadList();
+  } catch(e) { alert('删除失败：' + e.message); }
+}
+
+async function schLoadList() {
+  const el = document.getElementById('sch-list');
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px;">加载中...</div>';
+  try {
+    const res = await fetch(SV_SCRIPT_URL + '?action=schedules');
+    const json = await res.json();
+    const list = json.schedules || [];
+    if (!list.length) {
+      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px;">暂无已保存排班<br>在上方添加后会显示在这里</div>';
+      return;
+    }
+    const today = new Date().toISOString().slice(0,10);
+    el.innerHTML = list.map(s => {
+      const isPast = s.date < today;
+      const dateObj = new Date(s.date + 'T12:00:00');
+      const dateLabel = dateObj.toLocaleDateString('zh-CN', {month:'long', day:'numeric', weekday:'short'});
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);${isPast ? 'opacity:0.45;' : ''}">
+        <div style="min-width:90px;font-size:13px;font-weight:600;${isPast ? '' : 'color:var(--primary);'}">${escHtml(s.date)}</div>
+        <div style="font-size:12px;color:var(--muted);min-width:70px;">${escHtml(dateLabel)}</div>
+        <div style="flex:1;display:flex;flex-wrap:wrap;gap:4px;">
+          ${s.singers.map(n => `<span style="background:var(--primary-light);color:var(--primary);border:1px solid var(--primary-border);border-radius:20px;padding:2px 10px;font-size:12px;">🎤 ${escHtml(n)}</span>`).join('')}
+        </div>
+        <button onclick="schEdit('${escHtml(s.date)}', ${escHtml(JSON.stringify(s.singers))})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">✏️</button>
+        <button onclick="schDelete('${escHtml(s.date)}')" style="background:none;border:1px solid #FCA5A5;color:#DC2626;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">🗑️</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:#DC2626;text-align:center;padding:16px;font-size:13px;">加载失败：' + escHtml(e.message) + '</div>';
+  }
+}
+
+function schEdit(date, singers) {
+  document.getElementById('sch-date').value = date;
+  document.querySelectorAll('.sch-singer-cb').forEach(cb => {
+    cb.checked = singers.includes(cb.value);
+  });
+  document.getElementById('sch-date').scrollIntoView({ behavior: 'smooth' });
+}
+
+function schMsg(text, color) {
+  const el = document.getElementById('sch-save-msg');
+  el.textContent = text;
+  el.style.color = color;
+  el.style.display = '';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
 
 </script>
 </body>

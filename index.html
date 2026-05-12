@@ -164,7 +164,7 @@ let todayStr = '';
 let todayData = null;
 
 // ─── Init ───
-(function init() {
+(async function init() {
   const d = DATE_OVERRIDE || new Date().toISOString().slice(0,10);
   todayStr = d;
   const parts = d.split('-');
@@ -172,7 +172,21 @@ let todayData = null;
   document.getElementById('hdr-date').textContent =
     dateObj.toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
 
-  const info = TP_DATA.schedule[d];
+  // Try built-in schedule first; then check GAS for dates added via studio backend
+  let info = TP_DATA.schedule[d] || null;
+  if (!info && VOTE_ENDPOINT) {
+    try {
+      const res = await Promise.race([
+        fetch(VOTE_ENDPOINT + '?action=schedule&date=' + d),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))
+      ]);
+      const json = await res.json();
+      if (json.schedule && json.schedule.singers && json.schedule.singers.length) {
+        info = { singers: json.schedule.singers, songs: [] };
+      }
+    } catch(e) {}
+  }
+
   if (!info || !info.singers.length) {
     document.getElementById('songs-wrap').innerHTML =
       '<div class="no-show"><div class="icon">🎵</div><div class="msg">今天暂无演出安排<br>如有疑问请联系场务</div></div>';
