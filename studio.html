@@ -983,7 +983,7 @@ async function loadInspiration() {
 {"date":"${dateStr}灵感","trends":[{"name":"内容方向名称（具体）","type":"歌曲","heat":"🔥🔥🔥🔥🔥","why":"为什么高潜力，一句话","content_type":"trending_song","prefill":{"song":"具体歌名","artist":"具体歌手","mood":"氛围关键词"}},{"name":"内容方向名称2","type":"大合唱","heat":"🔥🔥🔥🔥","why":"为什么高潜力","content_type":"singalong","prefill":{"song":"具体歌名","crowd":"估计人数","moment":"亮点瞬间"}},{"name":"内容方向名称3","type":"剧集OST","heat":"🔥🔥🔥🔥","why":"为什么高潜力","content_type":"trending_song","prefill":{"song":"OST名","artist":"剧名","mood":"氛围"}},{"name":"内容方向名称4","type":"活动","heat":"🔥🔥🔥","why":"为什么高潜力","content_type":"event","prefill":{"name":"活动名","date":"建议时间","highlight":"卖点","vibe":"适合人群"}},{"name":"内容方向名称5","type":"故事","heat":"🔥🔥🔥","why":"为什么高潜力","content_type":"story","prefill":{"story":"故事梗概","tone":"😂 搞笑轻松"}}]}`;
 
   try {
-    const result = await window.cowork.askClaude(prompt, []);
+    const result = await callClaude(prompt);
     let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
     let data = null;
     try { data = JSON.parse(raw.trim()); } catch(e) {}
@@ -1355,7 +1355,7 @@ ${inputs}
 （给员工的发布建议，1-2句，最佳发布时间或配合建议。）`;
 
   try {
-    const result = await window.cowork.askClaude(prompt, []);
+    const result = await callClaude(prompt);
     let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
     renderOutput(raw);
   } catch (err) {
