@@ -828,7 +828,7 @@ const TYPES = {
       { id: 'mood', label: '现场氛围关键词', type: 'text', placeholder: '例：全场大合唱、催泪、热血沸腾' },
       { id: 'date', label: '活动日期（可选）', type: 'text', placeholder: '例：本周五 6/5 / 今晚' },
     ],
-    extra: '生成热门歌曲现场视频帖子。开场钩子要强，情绪共鸣，让人很想去现场，文末有互动问题和预约CTA。'
+    extra: '热门歌曲现场视频帖。风格参考76K和35K示例：繁体开场，情绪共鸣，固定句型，极简短句。'
   },
   singalong: {
     label: '🎤 大合唱现场',
@@ -838,7 +838,7 @@ const TYPES = {
       { id: 'moment', label: '最难忘的瞬间', type: 'text', placeholder: '例：全场举手机灯、有人哭了' },
       { id: 'date', label: '日期（可选）', type: 'text', placeholder: '例：上周五' },
     ],
-    extra: '生成大合唱现场视频帖子。突出人数和氛围，"错过可惜"的紧迫感，有互动问题。'
+    extra: '大合唱现场帖。风格参考7K示例："你们知道马来西亚600人一起大合唱是什么感觉？🥹"——用数字冲击感开场，头皮麻的现场感，极短句。'
   },
   event: {
     label: '🌸 特色活动宣传',
@@ -849,7 +849,7 @@ const TYPES = {
       { id: 'price', label: '票价/优惠（可选）', type: 'text', placeholder: '例：免费入场 / RM128含双人套餐' },
       { id: 'vibe', label: '适合什么人去', type: 'text', placeholder: '例：带另一半、闺蜜聚会' },
     ],
-    extra: '生成特色活动宣传帖。情感化语言，"不去会后悔"，突出独特性和仪式感，末尾有预约CTA。'
+    extra: '特色活动帖。风格参考"星空下的躺平跨年"10K示例：诗意短句，情感金句，没有硬销售，让人读了就想@朋友。'
   },
   story: {
     label: '😂 趣味内部故事',
@@ -857,7 +857,7 @@ const TYPES = {
       { id: 'story', label: '故事梗概（简单说说发生了什么）', type: 'textarea', placeholder: '例：老板娘跟员工打赌说如果今晚来350人就叫Hazel出来请全场喝酒，结果真的达到了...' },
       { id: 'tone', label: '内容基调', type: 'select', options: ['😂 搞笑轻松', '🥹 温馨感人', '🔥 励志正能量'] },
     ],
-    extra: '生成趣味内部故事帖。第一人称或对话形式，真实感强，有反转或惊喜结尾，让人想@朋友。'
+    extra: '趣味故事帖。风格参考“阿平日记体”：口语化，有反转，真实感，像朋友在讲故事，结尾留互动问题。'
   },
   schedule: {
     label: '📅 演出节目表',
@@ -866,7 +866,7 @@ const TYPES = {
       { id: 'artists', label: '艺人/节目亮点（每行一个）', type: 'textarea', placeholder: '例：\n周一：治愈系歌手 Miniyu\n周四：DJ大合唱 Kopi林国伟\n周六：RAP vs RNB 对决' },
       { id: 'highlight', label: '本周最大亮点', type: 'text', placeholder: '例：周四林国伟Kopi特别回归！' },
     ],
-    extra: '生成演出节目表帖子。【重要】必须写有故事感、有期待感的正文，让人觉得"这周真的有戏看"，不能只列节目表。'
+    extra: '演出节目表帖。不能只列清单——要有故事感和期待感，让人看完觉得"这周真的有戏看"，用情绪短句带出每个节目的感觉。'
   },
   promo: {
     label: '🍺 优惠活动',
@@ -875,7 +875,7 @@ const TYPES = {
       { id: 'time', label: '优惠时间', type: 'text', placeholder: '例：每天 6pm-8pm（周日-周四）' },
       { id: 'angle', label: '目标场景/人群', type: 'text', placeholder: '例：下班解压、周中约会' },
     ],
-    extra: '生成优惠活动帖子。用场景感和情绪带入，让人觉得这个优惠是"为我量身定制的"，突出"值得"的感觉。'
+    extra: '优惠活动帖。不写硬销售——用下班/约会的场景感带入，让优惠显得很自然很贴心，反差结尾（只是来喝酒，没想到还听了场演唱会）。'
   }
 };
 
@@ -1317,15 +1317,30 @@ async function generateContent() {
 
   const prompt = `${BRAND}
 
-任务：${cfg.extra}
+任务背景：${cfg.extra}
 
 员工提供的信息：
 ${inputs}
 
+══════════════════════════════════════
+⚠️ 写作规则（违反任何一条视为失败）：
+
+① 总字数 60-100字（不含emoji不含标签）。参考上面示例，真实帖文都是这么短。
+② 第一行必须是以下其中一种开场：
+   - 繁体钩子：「當你在馬來西亞的一家音樂餐廳聽到《XXX》！」
+   - 情感拷问：「所以是XXX比较痛，还是XXX比较痛？」
+   - 感叹开场：「现场版《XXX》太炸裂了！😍」
+   - 反差开场：「只是想去吃个饭，没想到顺便听了个演唱会😂」
+③ 每行不超过18字，大量空行（每1-2句就空一行）
+④ 中间必须套用至少一个固定句型（从BRAND的固定句型列表选）
+⑤ 结尾必须是「📍Kuala Lumpur, Malaysia.」，最后可加WhatsApp预约（☎️ 011-7141 4828）
+⑥ 绝对不写「欢迎光临」「优惠不容错过」「赶快预约」「性价比」「扫码」这类硬销售语言
+══════════════════════════════════════
+
 请严格按以下格式输出（保留===标记）：
 
 ===CAPTION===
-（完整中文帖子正文。有力钩子句开场、情感共鸣正文、互动问题、预约CTA。换行分段。200-350字。）
+（正文。严格遵守上面6条规则。60-100字。每句独立成行，大量空行。）
 
 ===HASHTAGS===
 （15-20个标签，中英混合，适合马来西亚受众，空格分隔。必须含：#tangping #kualalumpur #malaysia #night）
@@ -1340,7 +1355,7 @@ ${inputs}
 （给员工的发布建议，1-2句，最佳发布时间或配合建议。）`;
 
   try {
-    const result = await callClaude(prompt);
+    const result = await window.cowork.askClaude(prompt, []);
     let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
     renderOutput(raw);
   } catch (err) {
