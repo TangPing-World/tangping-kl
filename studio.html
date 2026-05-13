@@ -781,9 +781,25 @@ function showModeBadge(text, color) {
   b.textContent = text;
 }
 
+// 统一 Claude 调用：优先 Cowork，否则走 Vercel API
+async function callClaude(prompt) {
+  if (window.cowork?.askClaude) {
+    const result = await callClaude(prompt);
+    return typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
+  }
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'API 调用失败');
+  return data.text;
+}
+
 async function loadInspiration() {
   const btn = document.getElementById('inspire-btn');
-  if (!window.cowork?.askClaude) {
+  if (false) { // kept for structure
     // Browser fallback: read latest saved inspiration from GAS
     btn.disabled = true; btn.textContent = '⏳ 读取中...';
     document.getElementById('inspire-container').innerHTML = `<div class="loading-state"><div class="spinner"></div><div>读取最新内容灵感...</div></div>`;
@@ -845,7 +861,7 @@ async function loadInspiration() {
 {"date":"${dateStr}灵感","trends":[{"name":"内容方向名称（具体）","type":"歌曲","heat":"🔥🔥🔥🔥🔥","why":"为什么高潜力，一句话","content_type":"trending_song","prefill":{"song":"具体歌名","artist":"具体歌手","mood":"氛围关键词"}},{"name":"内容方向名称2","type":"大合唱","heat":"🔥🔥🔥🔥","why":"为什么高潜力","content_type":"singalong","prefill":{"song":"具体歌名","crowd":"估计人数","moment":"亮点瞬间"}},{"name":"内容方向名称3","type":"剧集OST","heat":"🔥🔥🔥🔥","why":"为什么高潜力","content_type":"trending_song","prefill":{"song":"OST名","artist":"剧名","mood":"氛围"}},{"name":"内容方向名称4","type":"活动","heat":"🔥🔥🔥","why":"为什么高潜力","content_type":"event","prefill":{"name":"活动名","date":"建议时间","highlight":"卖点","vibe":"适合人群"}},{"name":"内容方向名称5","type":"故事","heat":"🔥🔥🔥","why":"为什么高潜力","content_type":"story","prefill":{"story":"故事梗概","tone":"😂 搞笑轻松"}}]}`;
 
   try {
-    const result = await window.cowork.askClaude(prompt, []);
+    const result = await callClaude(prompt);
     let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
     let data = null;
     try { data = JSON.parse(raw.trim()); } catch(e) {}
@@ -1037,7 +1053,7 @@ ${transcriptStr.slice(0, 6000)}
 {"name":"热点名称5","type":"类型","heat":"🔥🔥🔥","why":"为什么","content_type":"story","prefill":{"story":"故事梗概","tone":"😂 搞笑轻松"}}
 ]}`;
 
-    const aiResult = await window.cowork.askClaude(parsePrompt, []);
+    const aiResult = await callClaude(parsePrompt);
     let raw = typeof aiResult === 'string' ? aiResult : (aiResult?.text ?? aiResult?.content ?? aiResult?.completion ?? JSON.stringify(aiResult));
 
     // Robust JSON extraction
@@ -1201,15 +1217,8 @@ ${inputs}
 ===TIP===
 （给员工的发布建议，1-2句，最佳发布时间或配合建议。）`;
 
-  if (!window.cowork?.askClaude) {
-    document.getElementById('output-container').innerHTML = `
-      <div class="output-card"><div class="empty-state"><div class="empty-icon">💻</div><div>此功能需要在 Cowork 桌面应用中使用</div><div style="margin-top:6px;font-size:12px;color:#aaa;">在浏览器中无法调用 AI 生成</div></div></div>`;
-    btn.disabled = false;
-    btn.textContent = '✨ AI 生成内容';
-    return;
-  }
   try {
-    const result = await window.cowork.askClaude(prompt, []);
+    const result = await callClaude(prompt);
     let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
     renderOutput(raw);
   } catch (err) {
@@ -1555,8 +1564,8 @@ async function svGenerateSetlist() {
   document.getElementById('sv-setlist-container').innerHTML = `<div class="card"><div class="loading-state"><div class="spinner"></div><div>正在根据投票结果编排今晚歌单...</div></div></div>`;
 
   try {
-    if (window.cowork?.askClaude) {
-      // ── Claude AI path ──
+    {
+      // ── Claude AI path (via Cowork or Vercel API) ──
       btn.textContent = '⏳ AI 排歌中...';
       const singerNames = info.singers.join(', ');
       const voteList = Object.entries(votes).sort((a,b)=>b[1]-a[1])
@@ -1600,18 +1609,13 @@ ${voteList}
 
 输出必须是完整的JSON数组，包含所有应演出的歌曲（约24首）。`;
 
-      const result = await window.cowork.askClaude(prompt, []);
+      const result = await callClaude(prompt);
       let raw = typeof result === 'string' ? result : (result?.text ?? result?.content ?? result?.completion ?? JSON.stringify(result));
       let setlist = null;
       try { setlist = JSON.parse(raw.trim()); } catch(e) {}
       if (!setlist) { const m = raw.match(/\[([\s\S]+?)\]/); if (m) try { setlist = JSON.parse('['+m[1]+']'); } catch(e2) {} }
       if (!setlist) { const s=raw.indexOf('['), e=raw.lastIndexOf(']'); if(s>-1&&e>s) try{setlist=JSON.parse(raw.slice(s,e+1));}catch(e2){} }
       if (!setlist || !setlist.length) throw new Error('无法解析 AI 返回');
-      svRenderSetlist(setlist);
-
-    } else {
-      // ── Local rule-based fallback ──
-      const setlist = svArrangeSetlistLocally(info, votes);
       svRenderSetlist(setlist);
     }
   } catch(e) {
